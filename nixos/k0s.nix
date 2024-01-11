@@ -142,7 +142,7 @@ in {
               enabled: true
         '';
     in
-    {
+    mkIf cfg.enable {
       environment.etc."k0s/k0s.yaml".source = configFile;
 
       systemd.services.${unitName} = {
