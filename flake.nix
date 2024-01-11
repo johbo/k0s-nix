@@ -42,9 +42,7 @@
       };
     };
 
-    nixosModules = {
-      k0s = import ./nixos/k0s.nix;
-    };
+    nixosModules.default = import ./nixos/k0s.nix;
 
   };
 }
