@@ -53,7 +53,9 @@ in {
           ExecStart = "${cfg.package}/bin/k0s ${subcommand} --config=/etc/k0s/k0s.yaml --data-dir=/var/lib/k0s"
             + optionalString (cfg.role == "single") " --single"
             + optionalString (cfg.role == "controller+worker") " --enable-worker"
-            + optionalString (cfg.role == "worker") " --token-file=/etc/k0s/k0stoken";
+            # TODO: Verify assumption that the usage of a token on the leader will not
+            # cause any problems.
+            + optionalString (cfg.role != "single") " --token-file=/etc/k0s/k0stoken";
         };
       };
     };
