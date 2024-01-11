@@ -45,6 +45,11 @@
 
             services.k0s = {
               enable = true;
+              apiAddress = "192.0.2.1";
+              apiSans = [
+                "192.0.2.1"
+                "192.0.2.2"
+              ];
             };
           })
         ];
