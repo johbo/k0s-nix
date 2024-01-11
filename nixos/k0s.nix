@@ -19,6 +19,11 @@ in {
       '';
     };
 
+    dataDir = mkOption {
+      type = types.path;
+      default = "/var/lib/k0s";
+    };
+
     users = {
       etcdUser = mkOption {
         type = types.str;
@@ -73,7 +78,7 @@ in {
           TimeoutStartSec = 0;
           LimitNOFILE = 999999;
           Restart = "always";
-          ExecStart = "${cfg.package}/bin/k0s ${subcommand} --config=/etc/k0s/k0s.yaml --data-dir=/var/lib/k0s"
+          ExecStart = "${cfg.package}/bin/k0s ${subcommand} --config=/etc/k0s/k0s.yaml --data-dir=${cfg.dataDir}"
             + optionalString (cfg.role == "single") " --single"
             + optionalString (cfg.role == "controller+worker") " --enable-worker"
             # TODO: Verify assumption that the usage of a token on the leader will not
@@ -86,31 +91,31 @@ in {
         ${cfg.users.etcdUser} = {
           isSystemUser = true;
           group = "users";
-          home = "/var/lib/k0s";
+          home = "${cfg.dataDir}";
         };
       } // {
         ${cfg.users.kineUser} = {
           isSystemUser = true;
           group = "users";
-          home = "/var/lib/k0s";
+          home = "${cfg.dataDir}";
         };
       } // {
         ${cfg.users.konnectivityUser} = {
           isSystemUser = true;
           group = "users";
-          home = "/var/lib/k0s";
+          home = "${cfg.dataDir}";
         };
       } // {
         ${cfg.users.kubeAPIserverUser} = {
           isSystemUser = true;
           group = "users";
-          home = "/var/lib/k0s";
+          home = "${cfg.dataDir}";
         };
       } // {
         ${cfg.users.kubeSchedulerUser} = {
           isSystemUser = true;
           group = "users";
-          home = "/var/lib/k0s";
+          home = "${cfg.dataDir}";
         };
       };
 
