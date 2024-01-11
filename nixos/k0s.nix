@@ -19,6 +19,29 @@ in {
       '';
     };
 
+    users = {
+      etcdUser = mkOption {
+        type = types.str;
+        default = "etcd";
+      };
+      kineUser = mkOption {
+        type = types.str;
+        default = "kube-apiserver";
+      };
+      konnectivityUser = mkOption {
+        type = types.str;
+        default = "konnectivity-server";
+      };
+      kubeAPIserverUser = mkOption {
+        type = types.str;
+        default = "kube-apiserver";
+      };
+      kubeSchedulerUser = mkOption {
+        type = types.str;
+        default = "kube-scheduler";
+      };
+    };
+
   };
 
 
@@ -58,6 +81,38 @@ in {
             + optionalString (cfg.role != "single") " --token-file=/etc/k0s/k0stoken";
         };
       };
-    };
 
+      users.users = {
+        ${cfg.users.etcdUser} = {
+          isSystemUser = true;
+          group = "users";
+          home = "/var/lib/k0s";
+        };
+      } // {
+        ${cfg.users.kineUser} = {
+          isSystemUser = true;
+          group = "users";
+          home = "/var/lib/k0s";
+        };
+      } // {
+        ${cfg.users.konnectivityUser} = {
+          isSystemUser = true;
+          group = "users";
+          home = "/var/lib/k0s";
+        };
+      } // {
+        ${cfg.users.kubeAPIserverUser} = {
+          isSystemUser = true;
+          group = "users";
+          home = "/var/lib/k0s";
+        };
+      } // {
+        ${cfg.users.kubeSchedulerUser} = {
+          isSystemUser = true;
+          group = "users";
+          home = "/var/lib/k0s";
+        };
+      };
+
+    };
 }
