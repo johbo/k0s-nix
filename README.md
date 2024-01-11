@@ -9,6 +9,17 @@ use `k0s` inside of a NixOS system.
 The implementation is in its early phase.
 
 
+## Usage
+
+### Build the test system configuration
+
+```sh
+nix build .#nixosConfigurations.test.config.system.build.toplevel
+```
+
+Inspect the result in `./result`.
+
+
 ## Credit
 
 - The `k0s` package definition tool the work from this PR as input:
