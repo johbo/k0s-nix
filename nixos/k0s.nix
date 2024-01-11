@@ -24,6 +24,11 @@ in {
       default = "/var/lib/k0s";
     };
 
+    tokenFile = mkOption {
+      type = types.path;
+      default = "/etc/k0s/k0stoken";
+    };
+
     users = {
       etcdUser = mkOption {
         type = types.str;
@@ -83,7 +88,7 @@ in {
             + optionalString (cfg.role == "controller+worker") " --enable-worker"
             # TODO: Verify assumption that the usage of a token on the leader will not
             # cause any problems.
-            + optionalString (cfg.role != "single") " --token-file=/etc/k0s/k0stoken";
+            + optionalString (cfg.role != "single") " --token-file=${cfg.tokenFile}";
         };
       };
 
