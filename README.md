@@ -9,6 +9,12 @@ use `k0s` inside of a NixOS system.
 The implementation is in its early phase.
 
 
+## Credit
+
+- The `k0s` package definition tool the work from this PR as input:
+  <https://github.com/NixOS/nixpkgs/pull/258846>
+
+
 ## Contact
 
 - <johannes@bornhold.name>
