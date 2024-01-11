@@ -176,37 +176,15 @@ in {
         };
       };
 
-      users.users = {
-        ${cfg.users.etcdUser} = {
-          isSystemUser = true;
-          group = "users";
-          home = "${cfg.dataDir}";
-        };
-      } // {
-        ${cfg.users.kineUser} = {
-          isSystemUser = true;
-          group = "users";
-          home = "${cfg.dataDir}";
-        };
-      } // {
-        ${cfg.users.konnectivityUser} = {
-          isSystemUser = true;
-          group = "users";
-          home = "${cfg.dataDir}";
-        };
-      } // {
-        ${cfg.users.kubeAPIserverUser} = {
-          isSystemUser = true;
-          group = "users";
-          home = "${cfg.dataDir}";
-        };
-      } // {
-        ${cfg.users.kubeSchedulerUser} = {
-          isSystemUser = true;
-          group = "users";
-          home = "${cfg.dataDir}";
-        };
-      };
+      users.users = concatMapAttrs
+        (name: value: {
+          ${value} = {
+            isSystemUser = true;
+            group = "users";
+            home = "${cfg.dataDir}";
+          };
+        })
+        cfg.users;
 
     };
 }
