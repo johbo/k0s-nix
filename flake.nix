@@ -26,7 +26,7 @@
         system = "x86_64-linux";
 
         modules = [
-          ./k0s-module.nix
+          ./nixos/k0s.nix
           ({pkgs, ... }: {
             boot.isContainer = true;
 
@@ -37,7 +37,7 @@
     };
 
     nixosModules = {
-      k0s = import ./k0s-module.nix;
+      k0s = import ./nixos/k0s.nix;
     };
 
   };
