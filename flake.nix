@@ -3,7 +3,7 @@
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
 
-  outputs = { self, nixpkgs }: {
+  outputs = { self, nixpkgs }: rec {
 
     packages =
       let
@@ -29,14 +29,23 @@
 
     nixosConfigurations = {
       test = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-
         modules = [
+          ({
+            nixpkgs.system = "x86_64-linux";
+            nixpkgs.pkgs = import nixpkgs {
+              system = "x86_64-linux";
+              overlays = [
+                overlays.default
+              ];
+            };
+          })
           ./nixos/k0s.nix
           ({pkgs, ... }: {
             boot.isContainer = true;
 
-            services.k0s.enable = true;
+            services.k0s = {
+              enable = true;
+            };
           })
         ];
       };
