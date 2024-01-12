@@ -6,7 +6,15 @@ use `k0s` inside of a NixOS system.
 
 ## Status - EXPERIMENTAL
 
-The implementation is in its early phase.
+The implementation is in its early phase. It is possible to use and make work
+(with a few manual twists) for early inspection.
+
+
+## Contributions
+
+Both contributions and forks are welcome, also if this should ever reach a state
+which could be integrated upstream into Nixpkgs then I would happy archive this
+Flake for it.
 
 
 ## Usage
