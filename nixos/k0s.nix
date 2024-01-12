@@ -42,6 +42,14 @@ in {
       '';
     };
 
+    isLeader = mkOption {
+      type = types.bool;
+      default = false;
+      description = ''
+        The leader is used to generate the join tokens.
+      '';
+    };
+
     dataDir = mkOption {
       type = types.path;
       default = "/var/lib/k0s";
@@ -170,9 +178,7 @@ in {
           ExecStart = "${cfg.package}/bin/k0s ${subcommand} --config=${configFile} --data-dir=${cfg.dataDir}"
             + optionalString (cfg.role == "single") " --single"
             + optionalString (cfg.role == "controller+worker") " --enable-worker"
-            # TODO: Verify assumption that the usage of a token on the leader will not
-            # cause any problems.
-            + optionalString (cfg.role != "single") " --token-file=${cfg.tokenFile}";
+            + optionalString (cfg.role != "single" && !cfg.isLeader) " --token-file=${cfg.tokenFile}";
         };
       };
 
