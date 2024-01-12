@@ -175,7 +175,8 @@ in {
           TimeoutStartSec = 0;
           LimitNOFILE = 999999;
           Restart = "always";
-          ExecStart = "${cfg.package}/bin/k0s ${subcommand} --config=${configFile} --data-dir=${cfg.dataDir}"
+          ExecStart = "${cfg.package}/bin/k0s ${subcommand} --data-dir=${cfg.dataDir}"
+            + optionalString (cfg.role != "worker") " --config=${configFile}"
             + optionalString (cfg.role == "single") " --single"
             + optionalString (cfg.role == "controller+worker") " --enable-worker"
             + optionalString (cfg.role != "single" && !cfg.isLeader) " --token-file=${cfg.tokenFile}";
