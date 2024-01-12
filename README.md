@@ -33,7 +33,17 @@ Inspect the result in `./result`.
 
 ## Pointers
 
+### Projects and Documentation
+
 - [k0s](https://k0sproject.io/)
 - [NixOS](https://nixos.org/)
 - [Nix Flakes - Wiki](https://nixos.wiki/wiki/Flakes)
 - [Nix Flakes - Reference documentation](https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-flake.html#flake-references)
+
+### Other attempts to bring `k0s` to NixOS
+
+- Packaging request in NixOS - https://github.com/NixOS/nixpkgs/issues/247158
+- Pull Request to add the binary `k0s` into Nixpkgs -
+  https://github.com/NixOS/nixpkgs/pull/258846
+- Systemd unit handling related PR in `k0s` -
+  https://github.com/k0sproject/k0s/issues/1318
