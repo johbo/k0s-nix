@@ -28,6 +28,18 @@ nix build .#nixosConfigurations.test.config.system.build.toplevel
 Inspect the result in `./result`.
 
 
+### Token handling to join the cluster
+
+`k0s` uses a token to join the cluster. The token has to be placed into
+`/etc/k0s/k0stoken` (configurable via `services.k0s.tokenFile`), otherwise the
+service will not start.
+
+After the join the content is not needed anymore an the file can be emptied.
+
+Providing the token has to be done either manually or by your favorite
+automation tooling.
+
+
 ## Credit
 
 - The `k0s` package definition tool the work from this PR as input:
