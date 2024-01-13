@@ -8,6 +8,7 @@
 }:
 let
   releases = {
+    k0s_1_27 = import ./1_27.nix;
     k0s_1_28 = import ./1_28.nix;
   };
 in
