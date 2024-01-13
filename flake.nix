@@ -49,6 +49,10 @@
                 enable = true;
                 role = "worker";
 
+                # The first controller to bring up does not have a join token,
+                # it has to be flagged with "isLeader".
+                # isLeader = true;
+
                 apiAddress = "192.0.2.1";
                 apiSans = [
                   "192.0.2.1"

@@ -181,6 +181,9 @@ in {
             + optionalString (cfg.role == "controller+worker") " --enable-worker"
             + optionalString (cfg.role != "single" && !cfg.isLeader) " --token-file=${cfg.tokenFile}";
         };
+        unitConfig = mkIf (!cfg.isLeader) {
+          ConditionPathExists = cfg.tokenFile;
+        };
       };
 
       users.users = concatMapAttrs
