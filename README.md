@@ -40,6 +40,12 @@ Providing the token has to be done either manually or by your favorite
 automation tooling.
 
 
+## Known limitations
+
+- `k0s` is currently included as a binary. It would be better to replicate the
+  build process so that it would be built from sources.
+
+
 ## Development and alternatives
 
 Check out the folder [`docs`](./docs). It contains further notes about thoughts
