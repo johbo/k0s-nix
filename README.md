@@ -40,6 +40,12 @@ Providing the token has to be done either manually or by your favorite
 automation tooling.
 
 
+## Development and alternatives
+
+Check out the folder [`docs`](./docs). It contains further notes about thoughts
+and internals.
+
+
 ## Credit
 
 - The `k0s` package definition tool the work from this PR as input:
