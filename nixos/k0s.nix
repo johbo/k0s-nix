@@ -79,6 +79,16 @@ in {
       };
     };
 
+    network = {
+      provider = mkOption {
+        type = types.str;
+        default = "kuberouter";
+        description = ''
+          Allows to adjust the network provider configuration.
+        '';
+      };
+    };
+
     users = {
       etcdUser = mkOption {
         type = types.str;
@@ -151,7 +161,7 @@ in {
                 peerRouterASNs: ""
                 peerRouterIPs: ""
               podCIDR: 10.244.0.0/16
-              provider: kuberouter
+              provider: ${cfg.network.provider}
               serviceCIDR: 10.96.0.0/12
             podSecurityPolicy:
               defaultPolicy: 00-k0s-privileged
