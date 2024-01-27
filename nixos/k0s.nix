@@ -69,6 +69,16 @@ in {
       '';
     };
 
+    kubeProxy = {
+      disabled = mkOption {
+        type = types.bool;
+        default = false;
+        description = ''
+          Allows to disable kubeProxy.
+        '';
+      };
+    };
+
     users = {
       etcdUser = mkOption {
         type = types.str;
@@ -134,6 +144,7 @@ in {
             network:
               kubeProxy:
                 mode: iptables
+                disabled: ${if cfg.kubeProxy.disabled then "true" else "false"}
               kuberouter:
                 autoMTU: true
                 mtu: 0
