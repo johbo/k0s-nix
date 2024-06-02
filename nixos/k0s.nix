@@ -199,7 +199,7 @@ in {
           ExecStart = "${cfg.package}/bin/k0s ${subcommand} --data-dir=${cfg.dataDir}"
             + optionalString (cfg.role != "worker") " --config=${configFile}"
             + optionalString (cfg.role == "single") " --single"
-            + optionalString (cfg.role == "controller+worker") " --enable-worker"
+            + optionalString (cfg.role == "controller+worker") " --enable-worker --no-taints"
             + optionalString (cfg.role != "single" && !cfg.isLeader) " --token-file=${cfg.tokenFile}";
         };
         unitConfig = mkIf (!cfg.isLeader) {
