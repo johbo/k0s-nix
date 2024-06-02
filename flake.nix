@@ -47,7 +47,8 @@
 
               services.k0s = {
                 enable = true;
-                role = "worker";
+
+                role = "controller";
 
                 # The first controller to bring up does not have a join token,
                 # it has to be flagged with "isLeader".
