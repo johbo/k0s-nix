@@ -9,8 +9,9 @@
       genPackages = pkgs: rec {
         inherit (pkgs.callPackage ./k0s/default.nix {})
           k0s_1_27
-          k0s_1_28;
-        k0s = k0s_1_28;
+          k0s_1_28
+          k0s_1_30;
+        k0s = k0s_1_30;
       };
 
     in
