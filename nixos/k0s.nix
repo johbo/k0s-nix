@@ -1,9 +1,13 @@
-{ pkgs, lib, config, ... }:
-
-with lib;
-
-let cfg = config.services.k0s;
-
+{ pkgs, lib, config, ... }: let
+  inherit (lib) mkEnableOption mkPackageOption types mkOption literalExpression optionalAttrs mkIf optionalString concatMapAttrs;
+  inherit (types) str enum bool path nullOr attrsOf listOf port attrTag ints int submodule addCheck anything;
+  cfg = config.services.k0s;
+  mkStringMapOption = { example, description }: (mkOption {
+    type = attrsOf str;
+    default = {};
+    example = literalExpression example;
+    description = description;
+  });
 in {
 
   options.services.k0s = {
@@ -12,38 +16,15 @@ in {
     package = mkPackageOption pkgs "k0s" { };
 
     role = mkOption {
-      type = types.enum [ "controller" "controller+worker" "worker" "single"];
+      type = enum [ "controller" "controller+worker" "worker" "single"];
       default = "single";
       description = ''
         The role of the node.
       '';
     };
 
-    apiAddress = mkOption {
-      # No default, has to be provided
-      type = types.str;
-      description = ''
-        Required. Local address on which to bind an API.
-      '';
-    };
-
-    apiSans = mkOption {
-      type = types.listOf types.str;
-      description = ''
-        Required. List of additional addresses to push to API servers serving the certificate.
-      '';
-    };
-
-    clusterName = mkOption {
-      type = types.str;
-      default = "k0s";
-      description = ''
-        The name of the cluster.
-      '';
-    };
-
     isLeader = mkOption {
-      type = types.bool;
+      type = bool;
       default = false;
       description = ''
         The leader is used to generate the join tokens.
@@ -51,67 +32,778 @@ in {
     };
 
     dataDir = mkOption {
-      type = types.path;
+      type = path;
       default = "/var/lib/k0s";
     };
 
     tokenFile = mkOption {
-      type = types.path;
+      type = path;
       default = "/etc/k0s/k0stoken";
     };
 
     configText = mkOption {
       default = "";
-      type = types.str;
+      type = str;
       description = ''
         The configuration file in YAML format.
         A default will be generated if unset.
       '';
     };
 
-    kubeProxy = {
-      disabled = mkOption {
-        type = types.bool;
+    clusterName = mkOption {
+      type = str;
+      default = "k0s";
+      description = ''
+        The name of the cluster.
+      '';
+    };
+
+    config = {
+      api = {
+        externalAddress = mkOption {
+          type = nullOr str;
+          default = null;
+          description = ''
+            The loadbalancer address (for k0s controllers running behind a loadbalancer).
+            Configures all cluster components to connect to this address and also configures
+            this address for use when joining new nodes to the cluster.
+          '';
+        };
+
+        address = mkOption {
+          # No default, has to be provided
+          type = str;
+          description = ''
+            Required. Local address on which to bind an API.
+            Also serves as one of the addresses pushed on the k0s create service certificate on the API.
+          '';
+        };
+
+        sans = mkOption {
+          type = listOf str;
+          description = ''
+            Required. List of additional addresses to push to API servers serving the certificate.
+          '';
+        };
+
+        extraArgs = mkStringMapOption {
+          example = ''
+            {
+              authorization-mode = "Node,RBAC";
+              enable-bootstrap-token-auth = "true";
+              kubelet-preferred-address-types = "InternalIP,ExternalIP,Hostname";
+              requestheader-allowed-names = "front-proxy-client";
+              tls-min-version = "VersionTLS12";
+              service-account-issuer = "https://kubernetes.default.svc";
+              service-account-jwks-uri = "https://kubernetes.default.svc/openid/v1/jwks";
+              profiling = "false";
+              enable-admission-plugins = "NodeRestriction";
+            }
+          '';
+          description = ''
+            Map of key-values (strings) for any extra arguments to pass down to Kubernetes api-server process.
+          '';
+        };
+
+        port = mkOption {
+          type = port;
+          default = 6443;
+          description = ''
+            Custom port for kube-api server to listen on (default: 6443).
+          '';
+        };
+
+        k0sApiPort = mkOption {
+          type = port;
+          default = 9443;
+          description = ''
+            Custom port for k0s-api server to listen on (default: 9443).
+          '';
+        };
+      };
+
+      storage = {
+        type = mkOption {
+          type = enum [ "etcd" "kine" ];
+          default = "etcd";
+          description = ''
+            Type of the data store (valid values: `etcd` or `kine`).
+            **Note:** Type `etcd` will cause k0s to create and manage an elastic etcd cluster within the controller nodes.
+          '';
+        };
+
+        etcd = optionalAttrs (cfg.config.storage.type == "etcd") {
+          peerAddress = mkOption {
+            type = str;
+            default = "127.0.0.1";
+            description = ''
+              Node address used for etcd cluster peering.
+            '';
+          };
+
+          extraArgs = mkStringMapOption {
+            example = ''
+              {
+                listen-client-urls = "https://127.0.0.1:2379";
+                advertise-client-urls = "https://127.0.0.1:2379";
+                client-cert-auth = "true";
+                peer-client-cert-auth = "true";
+                enable-pprof = "false";
+              }
+            '';
+            description = ''
+              Map of key-values (strings) for any extra arguments to pass down to etcd process.
+            '';
+          };
+
+          externalCluster = mkOption {
+            type = nullOr (attrsOf (attrTag {
+              endpoints = {
+                type = listOf str;
+                description = ''
+                  Array of Etcd endpoints to use.
+                '';
+              };
+              etcdPrefix = {
+                type = str;
+                description = ''
+                  Prefix to use for this cluster.
+                  The same external Etcd cluster can be used for several k0s clusters,
+                  each prefixed with unique prefix to store data with.
+                '';
+              };
+              caFile = {
+                type = path;
+                description = ''
+                  CaFile is the host path to a file with Etcd cluster CA certificate.
+                '';
+              };
+              clientCertFile = {
+                type = path;
+                description = ''
+                  ClientCertFile is the host path to a file with TLS certificate for etcd client.
+                '';
+              };
+              clientKeyFile = {
+                type = path;
+                description = ''
+                  ClientKeyFile is the host path to a file with TLS key for etcd client.
+                '';
+              };
+            }));
+            default = null;
+            description = ''
+              Configuration when etcd is externally managed, i.e. running on dedicated nodes.
+              See [`spec.storage.etcd.externalCluster`](https://docs.k0sproject.io/stable/configuration/#specstorageetcdexternalcluster)
+            '';
+          };
+        };
+
+        kine = optionalAttrs (cfg.config.storage.type == "kine") {
+          dataSource = mkOption {
+            type = str;
+            default = "sqlite://${cfg.dataDir}/db/state.db?mode=rwc&_journal=WAL&cache=shared";
+            defaultText = "sqlite:///var/lib/k0s/db/state.db?mode=rwc&_journal=WAL&cache=shared";
+            description = ''
+              [kine](https://github.com/k3s-io/kine) datasource URL.
+            '';
+          };
+        };
+      };
+
+      network = {
+        provider = mkOption {
+          type = enum [ "calico" "kuberouter" "custom" ];
+          default = "kuberouter";
+          description = ''
+            Network provider (valid values: `calico`, `kuberouter`, or `custom`).
+            For `custom`, you can push any network provider (default: `kuberouter`).
+            Be aware that it is your responsibility to configure all of the CNI-related setups,
+            including the CNI provider itself and all necessary host levels setups (for example, CNI binaries).
+            **Note:** Once you initialize the cluster with a network provider the only way to change providers is through a full cluster redeployment.
+          '';
+        };
+
+        podCIDR = mkOption {
+          type = str;
+          default = "10.244.0.0/16";
+          description = ''
+            Pod network CIDR to use in the cluster.
+          '';
+        };
+
+        serviceCIDR = mkOption {
+          type = str;
+          default = "10.96.0.0/12";
+          description = ''
+            Network CIDR to use for cluster VIP services.
+          '';
+        };
+
+        clusterDomain = mkOption {
+          type = str;
+          default = "cluster.local";
+          description = ''
+            Cluster Domain to be passed to the [kubelet](https://kubernetes.io/docs/reference/config-api/kubelet-config.v1beta1/#kubelet-config-k8s-io-v1beta1-KubeletConfiguration)
+            and the coredns configuration.
+          '';
+        };
+
+        calico = optionalAttrs (cfg.config.network.provider == "calico") {
+          mode = mkOption {
+            type = enum [ "vxlan" "ipip" "bird" ];
+            default = "vxlan";
+            description = ''
+              `vxlan` (default), `ipip` or `bird`
+            '';
+          };
+
+          overlay = mkOption {
+            type = enum [ "Always" "CrossSubnet" optionalString (cfg.config.network.calico.mode == "vxlan") "Never" ];
+            default = "Always";
+            description = ''
+              Overlay mode: `Always` (default), `CrossSubnet` or `Never` (requires `mode=vxlan` to disable calico overlay-network).
+            '';
+          };
+
+          vxlanPort = mkOption {
+            type = port;
+            default = 4789;
+            description = ''
+              The UDP port for VXLAN (default: `4789`).
+            '';
+          };
+
+          vxlanVNI = mkOption {
+            type = ints.unsigned;
+            default = 4096;
+            description = ''
+              The virtual network ID for VXLAN (default: `4096`).
+            '';
+          };
+
+          mtu = mkOption {
+            type = ints.unsigned;
+            default = 0;
+            description = ''
+              MTU for overlay network (default: `0`, which causes Calico to detect optimal MTU during bootstrap).
+            '';
+          };
+
+          wireguard = mkOption {
+            type = bool;
+            default = false;
+            description = ''
+              Enable wireguard-based encryption (default: `false`).
+              Your host system must be wireguard ready (refer to the [Calico documentation](https://docs.projectcalico.org/security/encrypt-cluster-pod-traffic) for details).
+            '';
+          };
+
+          flexVolumeDriverPath = mkOption {
+            type = path;
+            default = "/usr/libexec/k0s/kubelet-plugins/volume/exec/nodeagent~uds";
+            description = ''
+              The host path for Calicos flex-volume-driver (default: `/usr/libexec/k0s/kubelet-plugins/volume/exec/nodeagent~uds`).
+              Change this path only if the default path is unwriteable (refer to [Project Calico Issue #2712](https://github.com/projectcalico/calico/issues/2712) for details).
+              Ideally, you will pair this option with a custom `volumePluginDir` in the profile you use for your worker nodes.
+            '';
+          };
+
+          ipAutodetectionMethod = mkOption {
+            type = str;
+            default = "";
+            description = ''
+              Use to force Calico to pick up the interface for pod network inter-node routing
+              (default: `""`, meaning not set, so that Calico will instead use its defaults).
+              For more information, refer to the [Calico documentation](https://docs.projectcalico.org/reference/node/configuration#ip-autodetection-methods).
+            '';
+          };
+
+          envVars = mkStringMapOption {
+            example = ''
+              {
+                CALICO_IPV4POOL_CIDR = "172.31.0.0/16";
+                CALICO_DISABLE_FILE_LOGGING = "true";
+                FELIX_DEFAULTENDPOINTTOHOSTACTION = "ACCEPT";
+                FELIX_LOGSEVERITYSCREEN = "info";
+                FELIX_HEALTHENABLED = "true";
+                FELIX_PROMETHEUSMETRICSENABLED = "true";
+                FELIX_FEATUREDETECTOVERRIDE = "ChecksumOffloadBroken=true";
+                FELIX_IPV6SUPPORT = "false";
+              }
+            '';
+            description = ''
+              Map of key-values (strings) for any calico-node [environment variable](https://docs.projectcalico.org/reference/node/configuration#ip-autodetection-methods).
+            '';
+          };
+        };
+
+        kuberouter = optionalAttrs (cfg.config.network.provider == "kuberouter") {
+          autoMTU = mkOption {
+            type = bool;
+            default = true;
+            description = ''
+              Autodetection of used MTU (default: `true`).
+            '';
+          };
+
+          mtu = optionalAttrs (!cfg.config.network.kuberouter.autoMTU) (mkOption {
+            type = ints.unsigned;
+            description = ''
+              Override MTU setting, if `autoMTU` must be set to `false`).
+            '';
+          });
+
+          metricsPort = mkOption {
+            type = port;
+            default = 8080;
+            description = ''
+              Kube-router metrics server port. Set to 0 to disable metrics (default: `8080`).
+            '';
+          };
+
+          hairpin = mkOption {
+            type = enum [ "Enabled" "Allowed" "Disabled" ];
+            default = "Enabled";
+            description = ''
+              Hairpin mode, supported modes:
+              - `Enabled`: enabled cluster wide
+              - `Allowed`: must be allowed per service using [annotations](https://github.com/cloudnativelabs/kube-router/blob/master/docs/user-guide.md#hairpin-mode)
+              - `Disabled`: doesn't work at all
+              (default: `Enabled`)
+            '';
+          };
+
+          ipMasq = mkOption {
+            type = bool;
+            default = false;
+            description = ''
+              IP masquerade for traffic originating from the pod network, and destined outside of it (default: false)
+            '';
+          };
+
+          extraArgs = mkStringMapOption {
+            example = ''
+              {
+                advertise-pod-cidr = "false";
+                bgp-port = "9179";
+                cache-sync-timeout = "2m";
+                health-port = "0";
+              }
+            '';
+            description = ''
+              Extra arguments to pass to kube-router.
+              Can be also used to override any k0s managed args.
+              For reference, see kube-router [documentation](https://github.com/cloudnativelabs/kube-router/blob/master/docs/user-guide.md#command-line-options). (default: empty)
+            '';
+          };
+        };
+
+        kubeProxy = {
+          disabled = mkOption {
+            type = bool;
+            default = false;
+            description = ''
+              Disable kube-proxy altogether (default: `false`).
+            '';
+          };
+
+          mode = mkOption {
+            type = enum [ "iptables" "ipvs" "userspace" ];
+            default = "iptables";
+            description = ''
+              Kube proxy operating mode, supported modes iptables, ipvs, userspace (default: iptables).
+            '';
+          };
+
+          iptables = mkOption {
+            type = nullOr (attrsOf (attrTag {
+              masqueradeBit = mkOption {
+                type = nullOr int;
+              };
+              masqueradeAll = mkOption {
+                type = bool;
+              };
+              localhostNodePorts = mkOption {
+                type = nullOr bool;
+              };
+              syncPeriod = mkOption {
+                type = str;
+              };
+              minSyncPeriod = mkOption {
+                type = str;
+              };
+            }));
+            default = null;
+            description = ''
+              Kube proxy iptables settings.
+            '';
+          };
+
+          ipvs = mkOption {
+            type = nullOr (attrsOf (attrTag {
+              syncPeriod = mkOption {
+                type = str;
+              };
+              minSyncPeriod = mkOption {
+                type = str;
+              };
+              scheduler = mkOption {
+                type = str;
+              };
+              excludedCIDRs = mkOption {
+                type = nullOr (listOf str);
+              };
+              strictARP = mkOption {
+                type = bool;
+              };
+              tcpTimeout = mkOption {
+                type = str;
+              };
+              tcpFinTimeout = mkOption {
+                type = str;
+              };
+              udpTimeout = mkOption {
+                type = str;
+              };
+            }));
+            default = null;
+            description = ''
+              Kube proxy ipvs settings.
+            '';
+          };
+
+          nodePortAddresses = mkOption {
+            type = nullOr (listOf str);
+            default = null;
+            description = ''
+              Kube proxy [nodePortAddresses](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-proxy/).
+            '';
+          };
+        };
+
+        nodeLocalLoadBalancing = {
+          enabled = mkOption {
+            type = bool;
+            default = false;
+            description = ''
+              Indicates if node-local load balancing should be used to access Kubernetes API servers from worker nodes. Default: `false`.
+            '';
+          };
+
+          type = mkOption {
+            type = enum [ "EnvoyProxy" ];
+            default = "EnvoyProxy";
+            description = ''
+              The type of the node-local load balancer to deploy on worker nodes.
+              Default: `EnvoyProxy`. (This is the only option for now.)
+            '';
+          };
+
+          envoyProxy = optionalAttrs (cfg.config.network.nodeLocalLoadBalancing.type == "EnvoyProxy") (mkOption {
+            type = nullOr (attrsOf (attrTag {
+              image = mkOption {
+                type = nullOr attrsOf (attrTag {
+                  image = mkOption {
+                    type = str;
+                  };
+                  version = mkOption {
+                    type = str;
+                  };
+                });
+              };
+              imagePullPolicy = mkOption {
+                type = enum [ "Always" "Never" "IfNotPresent" ];
+              };
+              apiServerBindPort = mkOption {
+                type = port;
+              };
+              konnectivityServerBindPort = mkOption {
+                type = nullOr port;
+              };
+            }));
+            default = null;
+            description = ''
+              Configuration options related to the "EnvoyProxy" type of load balancing.
+            '';
+          });
+        };
+
+        controlPlaneLoadBalancing = {
+          enabled = mkOption {
+            type = bool;
+            default = false;
+            description = ''
+              Indicates if control plane load balancing should be enabled. Default: `false`.
+            '';
+          };
+
+          type = mkOption {
+            type = enum [ "Keepalived" ];
+            default = "Keepalived";
+            description = ''
+              The type of the control plane load balancer to deploy on controller nodes.
+              Currently, the only supported type is `Keepalived`.
+            '';
+          };
+
+          keepalived = optionalAttrs (cfg.config.network.controlPlaneLoadBalancing.type == "Keepalived") mkOption {
+            type = nullOr (submodule {
+              options = {
+                vrrpInstances = mkOption {
+                  type = listOf submodule {
+                    options = {
+                      virtualIPs = mkOption {
+                        type = addCheck (listOf str) (list: builtins.length list > 0);
+                        description = ''
+                          The list of virtual IP address used by the VRRP instance.
+                          Each virtual IP must be a CIDR as defined in RFC 4632 and RFC 4291.
+                        '';
+                      };
+                      interface = mkOption {
+                        type = str;
+                        default = "";
+                        description = ''
+                          Specifies the NIC used by the virtual router.
+                          If not specified, k0s will use the interface that owns the default route.
+                        '';
+                      };
+                      virtualRouterID = mkOption {
+                        type = ints.u8;
+                        default = 0;
+                        description = ''
+                          The VRRP router ID. If it is 0, k0s will
+                          automatically number the IDs for each VRRP instance, starting with 51.
+                          All the control plane nodes must use the same `virtualRouterID`.
+                          Other clusters in the same network must not use the same `virtualRouterID`.
+                        '';
+                      };
+                      advertIntervalSeconds = mkOption {
+                        type = ints.positive;
+                        default = 1;
+                        description = ''
+                          The advertisement interval in seconds.
+                        '';
+                      };
+                      authPass = mkOption {
+                        type = addCheck str (str: let len = builtins.stringLength str; in len >= 1 && len <= 8 );
+                        description = ''
+                          The password for accessing VRRPD. This is not a security
+                          feature but a way to prevent accidental misconfigurations.
+                          AuthPass must be 8 characters or less.
+                        '';
+                      };
+                    };
+                  };
+                  default = [];
+                  description = ''
+                    Configuration options related to the VRRP. This is an array which allows
+                    to configure multiple virtual IPs.
+                  '';
+                };
+                virtualServers = mkOption {
+                  type = listOf submodule {
+                    options = {
+                      ipAddress = mkOption {
+                        type = addCheck str (str: builtins.stringLength str >= 1);
+                        description = ''
+                          The virtual IP address used by the virtual server.
+                        '';
+                      };
+                      delayLoop = mkOption {
+                        type = str;
+                        default = "1m";
+                        description = ''
+                          The delay timer for check polling. DelayLoop accepts
+                          microsecond precision. Further precision will be truncated without
+                          warnings. Defaults to `1m`.
+                        '';
+                      };
+                      lbAlgo = mkOption {
+                        type = enum [ "rr" "wrr" "lc" "wlc" "lblc" "dh" "sh" "sed" "nq" ];
+                        default = "rr";
+                        description = ''
+                          The load balancing algorithm. If not specified, defaults to `rr`.
+                          Valid values are `rr`, `wrr`, `lc`, `wlc`, `lblc`, `dh`, `sh`, `sed`, `nq`. For further
+                          details refer to [keepalived documentation](https://keepalived-pqa.readthedocs.io/en/stable/scheduling_algorithms.html).
+                        '';
+                      };
+                      lbKind = mkOption {
+                        type = enum [ "NAT" "DR" "TUN" ];
+                        default = "DR";
+                        description = ''
+                          The load balancing kind. If not specified, defaults to `DR`.
+                          Valid values are `NAT` `DR` `TUN`. For further details refer to
+                          [keepalived documentation](https://keepalived-pqa.readthedocs.io/en/stable/load_balancing_techniques.html).
+                        '';
+                      };
+                      persistenceTimeoutSeconds = mkOption {
+                        type = ints.between 1 2678400;
+                        default = 360;
+                        description = ''
+                          Specifies a timeout value for persistent
+                          connections in seconds. PersistentTimeoutSeconds must be in the range of
+                          1-2678400 (31 days). If not specified, defaults to 360 (6 minutes).
+                        '';
+                      };
+                    };
+                  };
+                  default = [];
+                  description = ''
+                    Configuration options related to the virtual servers. This is an array
+                    which allows to configure multiple load balancers.
+                  '';
+                };
+              };
+            });
+            default = null;
+            description = ''
+              Contains configuration options related to the "Keepalived" type of load balancing.
+            '';
+          };
+        };
+      };
+
+      controllerManager.extraArgs = mkStringMapOption {
+        example = ''
+          {
+            flex-volume-plugin-dir = "/etc/kubernetes/kubelet-plugins/volume/exec";
+          }
+        '';
+        description = ''
+          Map of key-values (strings) for any extra arguments you want to pass down to the Kubernetes controller manager process.
+        '';
+      };
+
+      scheduler.extraArgs = mkStringMapOption {
+        example = ''
+          {
+            config = "/path/to/config-file";
+          }
+        '';
+        description = ''
+          Map of key-values (strings) for any extra arguments you want to pass down to Kubernetes scheduler process.
+        '';
+      };
+
+      workerProfiles = mkOption {
+        type = listOf (submodule {
+          options = {
+            name = mkOption {
+              type = str;
+              description = ''
+                Name to use as profile selector for the worker process
+              '';
+            };
+            values = mkOption {
+              type = attrsOf anything;
+              description = ''
+                [Kubelet configuration](https://kubernetes.io/docs/reference/config-api/kubelet-config.v1beta1/) overrides.
+                Note that there are several fields that cannot be overridden:
+                - `clusterDNS`
+                - `clusterDomain`
+                - `apiVersion`
+                - `kind`
+                - `staticPodURL`
+              '';
+            };
+          };
+        });
+        default = [];
+        description = ''
+          Worker profiles are used to manage worker-specific configuration in a centralized manner.
+          A ConfigMap is generated for each worker profile.
+          Based on the `--profile` argument given to the `k0s worker`,
+          the configuration in the corresponding ConfigMap is is picked up during startup.
+        '';
+      };
+
+      featureGates = mkOption {
+        type = listOf (submodule {
+          options = {
+            name = mkOption {
+              type = str;
+            };
+            enabled = mkOption {
+              type = bool;
+            };
+            components = mkOption {
+              type = nullOr listOf enum [ "kube-apiserver" "kube-controller-manager" "kubelet" "kube-scheduler" "kube-proxy" ];
+              default = null;
+            };
+          };
+        });
+        default = [];
+      };
+
+      images = let
+        imageModule = {
+          options = {
+            image = mkOption {
+              type = str;
+            };
+            version = mkOption {
+              type = str;
+            };
+          };
+        };
+        imageOption = mkOption {
+          type = submodule imageModule;
+        };
+      in mkOption {
+        type = attrsOf (attrTag {
+          konnectivity = imageOption;
+          pushgateway = imageOption;
+          metricsserver = imageOption;
+          kubeproxy = imageOption;
+          coredns = imageOption;
+          pause = imageOption;
+          calico.cni = imageOption;
+          calico.flexvolume = imageOption;
+          calico.node = imageOption;
+          calico.kubecontrollers = imageOption;
+          kuberouter.cni = imageOption;
+          kuberouter.cniInstaller = imageOption;
+          repository = mkOption {
+            type = str;
+          };
+          default_pull_policy = mkOption {
+            type = enum [ "Always" "Never" "IfNotPresent" ];
+          };
+        });
+        default = {};
+      };
+
+      installConfig.users = {
+        etcdUser = mkOption {
+          type = str;
+          default = "etcd";
+        };
+        kineUser = mkOption {
+          type = str;
+          default = "kube-apiserver";
+        };
+        konnectivityUser = mkOption {
+          type = str;
+          default = "konnectivity-server";
+        };
+        kubeAPIserverUser = mkOption {
+          type = str;
+          default = "kube-apiserver";
+        };
+        kubeSchedulerUser = mkOption {
+          type = str;
+          default = "kube-scheduler";
+        };
+      };
+
+      telemetry = mkOption {
+        type = bool;
         default = false;
-        description = ''
-          Allows to disable kubeProxy.
-        '';
       };
-    };
 
-    network = {
-      provider = mkOption {
-        type = types.str;
-        default = "kuberouter";
-        description = ''
-          Allows to adjust the network provider configuration.
-        '';
-      };
+      # TODO extensions
     };
-
-    users = {
-      etcdUser = mkOption {
-        type = types.str;
-        default = "etcd";
-      };
-      kineUser = mkOption {
-        type = types.str;
-        default = "kube-apiserver";
-      };
-      konnectivityUser = mkOption {
-        type = types.str;
-        default = "konnectivity-server";
-      };
-      kubeAPIserverUser = mkOption {
-        type = types.str;
-        default = "kube-apiserver";
-      };
-      kubeSchedulerUser = mkOption {
-        type = types.str;
-        default = "kube-scheduler";
-      };
-    };
-
   };
 
 
@@ -128,47 +820,7 @@ in {
           kind: Cluster
           metadata:
             name: ${cfg.clusterName}
-          spec:
-            api:
-              address: ${cfg.apiAddress}
-              k0sApiPort: 9443
-              port: 6443
-              sans:
-          ${concatLines (forEach cfg.apiSans (value:
-            "      - ${value}"
-          ))}      - 127.0.0.1
-            extensions:
-              storage:
-                create_default_storage_class: true
-                type: openebs_local_storage
-            installConfig:
-              users:
-                etcdUser: ${cfg.users.etcdUser}
-                kineUser: ${cfg.users.kineUser}
-                konnectivityUser: ${cfg.users.konnectivityUser}
-                kubeAPIserverUser: ${cfg.users.kubeAPIserverUser}
-                kubeSchedulerUser: ${cfg.users.kubeSchedulerUser}
-            konnectivity:
-              adminPort: 8133
-              agentPort: 8132
-            network:
-              kubeProxy:
-                mode: iptables
-                disabled: ${if cfg.kubeProxy.disabled then "true" else "false"}
-              kuberouter:
-                autoMTU: true
-                mtu: 0
-                peerRouterASNs: ""
-                peerRouterIPs: ""
-              podCIDR: 10.244.0.0/16
-              provider: ${cfg.network.provider}
-              serviceCIDR: 10.96.0.0/12
-            podSecurityPolicy:
-              defaultPolicy: 00-k0s-privileged
-            storage:
-              type: etcd
-            telemetry:
-              enabled: true
+          spec: ${builtins.toJSON cfg.config}
         '';
     in
     mkIf cfg.enable {
@@ -215,7 +867,7 @@ in {
             home = "${cfg.dataDir}";
           };
         })
-        cfg.users;
+        cfg.config.installConfig.users;
 
     };
 }

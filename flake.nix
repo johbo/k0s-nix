@@ -55,12 +55,14 @@
                 # it has to be flagged with "isLeader".
                 # isLeader = true;
 
-                apiAddress = "192.0.2.1";
-                apiSans = [
+                config.api.address = "192.0.2.1";
+                config.api.sans = [
                   "192.0.2.1"
                   "192.0.2.2"
                 ];
               };
+
+              system.stateVersion = "24.05";
             })
           ];
         };
