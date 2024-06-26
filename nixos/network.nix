@@ -1,5 +1,5 @@
 { lib, config, ... }@args: let
-  inherit (lib) mkOption optionalAttrs optionalString;
+  inherit (lib) mkEnableOption mkOption optionalAttrs optionalString;
   inherit (lib.types) str enum bool path nullOr attrsOf listOf port attrTag ints int submodule addCheck;
   util = import ./util.nix args;
 in {
@@ -127,6 +127,25 @@ in {
         '';
         description = ''
           Map of key-values (strings) for any calico-node [environment variable](https://docs.projectcalico.org/reference/node/configuration#ip-autodetection-methods).
+        '';
+      };
+    };
+
+    dualStack = {
+      enable = mkEnableOption "Defines whether or not IPv4/IPv6 dual-stack networking should be enabled.";
+
+      IPv6podCIDR = mkOption {
+        type = str;
+        description = ''
+          IPv6 Pod network CIDR to use in the cluster.
+        '';
+      };
+
+      IPv6serviceCIDR = mkOption {
+        type = str;
+        default = "";
+        description = ''
+          IPv6 Network CIDR to use for cluster VIP services.
         '';
       };
     };
@@ -276,13 +295,7 @@ in {
     };
 
     nodeLocalLoadBalancing = {
-      enabled = mkOption {
-        type = bool;
-        default = false;
-        description = ''
-          Indicates if node-local load balancing should be used to access Kubernetes API servers from worker nodes. Default: `false`.
-        '';
-      };
+      enabled = mkEnableOption "Indicates if node-local load balancing should be used to access Kubernetes API servers from worker nodes. Default: `false`.";
 
       type = mkOption {
         type = enum [ "EnvoyProxy" ];
@@ -323,13 +336,7 @@ in {
     };
 
     controlPlaneLoadBalancing = {
-      enabled = mkOption {
-        type = bool;
-        default = false;
-        description = ''
-          Indicates if control plane load balancing should be enabled. Default: `false`.
-        '';
-      };
+      enabled = mkEnableOption "Indicates if control plane load balancing should be enabled. Default: `false`.";
 
       type = mkOption {
         type = enum [ "Keepalived" ];
