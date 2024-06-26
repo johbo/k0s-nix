@@ -1,6 +1,6 @@
 { lib, config, ... }@args: let
   inherit (lib) mkEnableOption mkOption optionalString;
-  inherit (lib.types) str enum path port ints;
+  inherit (lib.types) str enum path port ints addCheck;
   util = import ./util.nix args;
 in {
   options = {
@@ -14,7 +14,7 @@ in {
     };
 
     overlay = mkOption {
-      type = enum [ "Always" "CrossSubnet" optionalString (config.mode == "vxlan") "Never" ];
+      type = addCheck (enum [ "Always" "CrossSubnet" "Never" ]) (v: config.mode == "vxlan" || v != "Never");
       default = "Always";
       description = ''
         Overlay mode: `Always` (default), `CrossSubnet` or `Never` (requires `mode=vxlan` to disable calico overlay-network).
@@ -65,6 +65,16 @@ in {
       default = "";
       description = ''
         Use to force Calico to pick up the interface for pod network inter-node routing
+        (default: `""`, meaning not set, so that Calico will instead use its defaults).
+        For more information, refer to the [Calico documentation](https://docs.projectcalico.org/reference/node/configuration#ip-autodetection-methods).
+      '';
+    };
+
+    ipV6AutodetectionMethod = mkOption {
+      type = str;
+      default = "";
+      description = ''
+        Use to force Calico to pick up the interface for IPv6 pod network inter-node routing
         (default: `""`, meaning not set, so that Calico will instead use its defaults).
         For more information, refer to the [Calico documentation](https://docs.projectcalico.org/reference/node/configuration#ip-autodetection-methods).
       '';
