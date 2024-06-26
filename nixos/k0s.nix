@@ -1,13 +1,9 @@
-{ pkgs, lib, config, ... }: let
-  inherit (lib) mkEnableOption mkPackageOption types mkOption literalExpression optionalAttrs mkIf optionalString concatMapAttrs;
-  inherit (types) str enum bool path nullOr attrsOf listOf port attrTag ints int submodule addCheck anything;
+{ pkgs, lib, config, ... }@args: let
+  inherit (lib) mkEnableOption mkPackageOption mkOption optionalAttrs mkIf optionalString concatMapAttrs;
+  inherit (lib.types) str enum bool path nullOr attrsOf listOf port attrTag ints int submodule addCheck anything;
+  util = import ./util.nix args;
+  inherit (util) mkStringMapOption;
   cfg = config.services.k0s;
-  mkStringMapOption = { example, description }: (mkOption {
-    type = attrsOf str;
-    default = {};
-    example = literalExpression example;
-    description = description;
-  });
 in {
 
   options.services.k0s = {
@@ -59,67 +55,10 @@ in {
     };
 
     config = {
-      api = {
-        externalAddress = mkOption {
-          type = nullOr str;
-          default = null;
-          description = ''
-            The loadbalancer address (for k0s controllers running behind a loadbalancer).
-            Configures all cluster components to connect to this address and also configures
-            this address for use when joining new nodes to the cluster.
-          '';
-        };
-
-        address = mkOption {
-          # No default, has to be provided
-          type = str;
-          description = ''
-            Required. Local address on which to bind an API.
-            Also serves as one of the addresses pushed on the k0s create service certificate on the API.
-          '';
-        };
-
-        sans = mkOption {
-          type = listOf str;
-          description = ''
-            Required. List of additional addresses to push to API servers serving the certificate.
-          '';
-        };
-
-        extraArgs = mkStringMapOption {
-          example = ''
-            {
-              authorization-mode = "Node,RBAC";
-              enable-bootstrap-token-auth = "true";
-              kubelet-preferred-address-types = "InternalIP,ExternalIP,Hostname";
-              requestheader-allowed-names = "front-proxy-client";
-              tls-min-version = "VersionTLS12";
-              service-account-issuer = "https://kubernetes.default.svc";
-              service-account-jwks-uri = "https://kubernetes.default.svc/openid/v1/jwks";
-              profiling = "false";
-              enable-admission-plugins = "NodeRestriction";
-            }
-          '';
-          description = ''
-            Map of key-values (strings) for any extra arguments to pass down to Kubernetes api-server process.
-          '';
-        };
-
-        port = mkOption {
-          type = port;
-          default = 6443;
-          description = ''
-            Custom port for kube-api server to listen on (default: 6443).
-          '';
-        };
-
-        k0sApiPort = mkOption {
-          type = port;
-          default = 9443;
-          description = ''
-            Custom port for k0s-api server to listen on (default: 9443).
-          '';
-        };
+      api = mkOption {
+        description = "Defines the settings for the K0s API";
+        type = submodule (import ./api.nix);
+        default = {};
       };
 
       storage = {
