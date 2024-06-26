@@ -19,7 +19,7 @@ in {
 
     podCIDR = mkOption {
       type = str;
-      default = "10.244.0.0/16";
+      default = "10.244.0.0/16"; # TODO validate CIDR
       description = ''
         Pod network CIDR to use in the cluster.
       '';
@@ -35,7 +35,7 @@ in {
 
     clusterDomain = mkOption {
       type = str;
-      default = "cluster.local";
+      default = "cluster.local"; # TODO validate domain
       description = ''
         Cluster Domain to be passed to the [kubelet](https://kubernetes.io/docs/reference/config-api/kubelet-config.v1beta1/#kubelet-config-k8s-io-v1beta1-KubeletConfiguration)
         and the coredns configuration.

@@ -7,7 +7,7 @@ in {
 
     address = mkOption {
       # No default, has to be provided
-      type = str;
+      type = str; # TODO validate IP
       description = ''
         Required. Local address on which to bind an API.
         Also serves as one of the addresses pushed on the k0s create service certificate on the API.
