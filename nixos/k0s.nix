@@ -410,7 +410,7 @@ in {
                   type = listOf submodule {
                     options = {
                       virtualIPs = mkOption {
-                        type = addCheck (listOf str) (list: builtins.length list > 0);
+                        type = addCheck (listOf str) (l: builtins.length l > 0);
                         description = ''
                           The list of virtual IP address used by the VRRP instance.
                           Each virtual IP must be a CIDR as defined in RFC 4632 and RFC 4291.
@@ -442,7 +442,7 @@ in {
                         '';
                       };
                       authPass = mkOption {
-                        type = addCheck str (str: let len = builtins.stringLength str; in len >= 1 && len <= 8 );
+                        type = addCheck str (s: let len = builtins.stringLength s; in len >= 1 && len <= 8 );
                         description = ''
                           The password for accessing VRRPD. This is not a security
                           feature but a way to prevent accidental misconfigurations.
@@ -461,7 +461,7 @@ in {
                   type = listOf submodule {
                     options = {
                       ipAddress = mkOption {
-                        type = addCheck str (str: builtins.stringLength str >= 1);
+                        type = addCheck str (s: builtins.stringLength s >= 1);
                         description = ''
                           The virtual IP address used by the virtual server.
                         '';
