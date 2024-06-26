@@ -136,6 +136,7 @@ in {
 
       IPv6podCIDR = mkOption {
         type = str;
+        default = "";
         description = ''
           IPv6 Pod network CIDR to use in the cluster.
         '';
