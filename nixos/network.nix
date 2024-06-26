@@ -1,6 +1,6 @@
 { lib, config, ... }@args: let
-  inherit (lib) mkEnableOption mkPackageOption mkOption optionalAttrs mkIf optionalString concatMapAttrs;
-  inherit (lib.types) str enum bool path nullOr attrsOf listOf port attrTag ints int submodule addCheck anything;
+  inherit (lib) mkOption optionalAttrs optionalString;
+  inherit (lib.types) str enum bool path nullOr attrsOf listOf port attrTag ints int submodule addCheck;
   util = import ./util.nix args;
 in {
   options = {
