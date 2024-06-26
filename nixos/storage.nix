@@ -1,6 +1,6 @@
 { lib, config, dataDir, ... }@args: let
   inherit (lib) mkOption optionalAttrs;
-  inherit (lib.types) str enum path nullOr attrsOf listOf port attrTag;
+  inherit (lib.types) str enum path nullOr attrsOf listOf port attrTag submodule addCheck;
   util = import ./util.nix args;
 in {
   options = {
@@ -39,40 +39,45 @@ in {
       };
 
       externalCluster = mkOption {
-        type = nullOr (attrsOf (attrTag {
-          endpoints = {
-            type = listOf str;
-            description = ''
-              Array of Etcd endpoints to use.
-            '';
+        type = nullOr (submodule {
+          options = {
+            endpoints = mkOption {
+              type = addCheck (listOf (addCheck str (s: builtins.stringLength s >= 1))) (l: builtins.length l > 0);
+              description = ''
+                Array of Etcd endpoints to use.
+              '';
+            };
+            etcdPrefix = mkOption {
+              type = addCheck str (s: builtins.stringLength s >= 1);
+              description = ''
+                Prefix to use for this cluster.
+                The same external Etcd cluster can be used for several k0s clusters,
+                each prefixed with unique prefix to store data with.
+              '';
+            };
+            caFile = mkOption {
+              type = str;
+              default = "";
+              description = ''
+                CaFile is the host path to a file with Etcd cluster CA certificate.
+              '';
+            };
+            clientCertFile = mkOption {
+              type = str;
+              default = "";
+              description = ''
+                ClientCertFile is the host path to a file with TLS certificate for etcd client.
+              '';
+            };
+            clientKeyFile = mkOption {
+              type = str;
+              default = "";
+              description = ''
+                ClientKeyFile is the host path to a file with TLS key for etcd client.
+              '';
+            };
           };
-          etcdPrefix = {
-            type = str;
-            description = ''
-              Prefix to use for this cluster.
-              The same external Etcd cluster can be used for several k0s clusters,
-              each prefixed with unique prefix to store data with.
-            '';
-          };
-          caFile = {
-            type = path;
-            description = ''
-              CaFile is the host path to a file with Etcd cluster CA certificate.
-            '';
-          };
-          clientCertFile = {
-            type = path;
-            description = ''
-              ClientCertFile is the host path to a file with TLS certificate for etcd client.
-            '';
-          };
-          clientKeyFile = {
-            type = path;
-            description = ''
-              ClientKeyFile is the host path to a file with TLS key for etcd client.
-            '';
-          };
-        }));
+        });
         default = null;
         description = ''
           Configuration when etcd is externally managed, i.e. running on dedicated nodes.
