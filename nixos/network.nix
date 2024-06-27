@@ -42,6 +42,12 @@ in {
       '';
     };
 
+    kuberouter = optionalAttrs (config.provider == "kuberouter") (mkOption {
+      description = "Options for the `kuberouter` network provider.";
+      type = submodule (import ./kuberouter.nix);
+      default = {};
+    });
+
     calico = optionalAttrs (config.provider == "calico") (mkOption {
       description = "Options for the `calico` network provider.";
       type = submodule (import ./calico.nix);
@@ -65,12 +71,6 @@ in {
         '';
       } "";
     };
-
-    kuberouter = optionalAttrs (config.provider == "kuberouter") (mkOption {
-      description = "Options for the `kuberouter` network provider.";
-      type = submodule (import ./kuberouter.nix);
-      default = {};
-    });
 
     kubeProxy = mkOption {
       description = "Defines the configuration for kube-proxy.";
