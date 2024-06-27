@@ -6,8 +6,6 @@ in {
   options = {
 
     provider = mkOption {
-      type = enum [ "calico" "kuberouter" "custom" ];
-      default = "kuberouter";
       description = ''
         Network provider (valid values: `calico`, `kuberouter`, or `custom`).
         For `custom`, you can push any network provider (default: `kuberouter`).
@@ -15,31 +13,33 @@ in {
         including the CNI provider itself and all necessary host levels setups (for example, CNI binaries).
         **Note:** Once you initialize the cluster with a network provider the only way to change providers is through a full cluster redeployment.
       '';
+      type = enum [ "calico" "kuberouter" "custom" ];
+      default = "kuberouter";
     };
 
     podCIDR = mkOption {
-      type = str;
-      default = "10.244.0.0/16"; # TODO validate CIDR
       description = ''
         Pod network CIDR to use in the cluster.
       '';
+      type = str;
+      default = "10.244.0.0/16"; # TODO validate CIDR
     };
 
     serviceCIDR = mkOption {
-      type = str;
-      default = "10.96.0.0/12";
       description = ''
         Network CIDR to use for cluster VIP services.
       '';
+      type = str;
+      default = "10.96.0.0/12";
     };
 
     clusterDomain = mkOption {
-      type = str;
-      default = "cluster.local"; # TODO validate domain
       description = ''
         Cluster Domain to be passed to the [kubelet](https://kubernetes.io/docs/reference/config-api/kubelet-config.v1beta1/#kubelet-config-k8s-io-v1beta1-KubeletConfiguration)
         and the coredns configuration.
       '';
+      type = str;
+      default = "cluster.local"; # TODO validate domain
     };
 
     kuberouter = optionalAttrs (config.provider == "kuberouter") (mkOption {
@@ -54,21 +54,21 @@ in {
       default = {};
     });
 
-    dualStack = {
+    dualStack = { # TODO add checks for dual stack
       enable = mkEnableOption "Defines whether or not IPv4/IPv6 dual-stack networking should be enabled.";
 
       IPv6podCIDR = util.mkOptionMandatoryIf config.dualStack.enable {
-        type = str;
         description = ''
           IPv6 Pod network CIDR to use in the cluster.
         '';
+        type = str;
       } "";
 
       IPv6serviceCIDR = util.mkOptionMandatoryIf config.dualStack.enable {
-        type = str;
         description = ''
           IPv6 Network CIDR to use for cluster VIP services.
         '';
+        type = str;
       } "";
     };
 

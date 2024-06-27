@@ -6,31 +6,29 @@ in {
   options = {
 
     autoMTU = mkOption {
-      type = bool;
-      default = true;
       description = ''
         Autodetection of used MTU (default: `true`).
       '';
+      type = bool;
+      default = true;
     };
 
     mtu = util.mkOptionMandatoryIf (!config.autoMTU) {
-      type = ints.unsigned;
       description = ''
         Override MTU setting, if `autoMTU` must be set to `false`).
       '';
+      type = ints.unsigned;
     } 0;
 
     metricsPort = mkOption {
-      type = port;
-      default = 8080;
       description = ''
         Kube-router metrics server port. Set to 0 to disable metrics (default: `8080`).
       '';
+      type = port;
+      default = 8080;
     };
 
     hairpin = mkOption {
-      type = enum [ "Enabled" "Allowed" "Disabled" ];
-      default = "Enabled";
       description = ''
         Hairpin mode, supported modes:
         - `Enabled`: enabled cluster wide
@@ -38,6 +36,8 @@ in {
         - `Disabled`: doesn't work at all
         (default: `Enabled`)
       '';
+      type = enum [ "Enabled" "Allowed" "Disabled" ];
+      default = "Enabled";
     };
 
     ipMasq = mkEnableOption ''
@@ -45,6 +45,11 @@ in {
     '';
 
     extraArgs = util.mkStringMapOption {
+      description = ''
+        Extra arguments to pass to kube-router.
+        Can be also used to override any k0s managed args.
+        For reference, see kube-router [documentation](https://github.com/cloudnativelabs/kube-router/blob/master/docs/user-guide.md#command-line-options). (default: empty)
+      '';
       example = ''
         {
           advertise-pod-cidr = "false";
@@ -52,11 +57,6 @@ in {
           cache-sync-timeout = "2m";
           health-port = "0";
         }
-      '';
-      description = ''
-        Extra arguments to pass to kube-router.
-        Can be also used to override any k0s managed args.
-        For reference, see kube-router [documentation](https://github.com/cloudnativelabs/kube-router/blob/master/docs/user-guide.md#command-line-options). (default: empty)
       '';
     };
 

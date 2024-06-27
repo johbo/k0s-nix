@@ -7,51 +7,58 @@
 in {
 
   options.services.k0s = {
+
     enable = mkEnableOption (lib.mdDoc "Enable the k0s Kubernetes distribution.");
 
     package = mkPackageOption pkgs "k0s" { };
 
     role = mkOption {
-      type = enum [ "controller" "controller+worker" "worker" "single"];
-      default = "single";
       description = ''
         The role of the node.
       '';
+      type = enum [ "controller" "controller+worker" "worker" "single"];
+      default = "single";
     };
 
     isLeader = mkOption {
-      type = bool;
-      default = false;
       description = ''
         The leader is used to generate the join tokens.
       '';
+      type = bool;
+      default = false;
     };
 
     dataDir = mkOption {
+      description = ''
+        The directory k0s should use to store data in.
+      '';
       type = path;
       default = "/var/lib/k0s";
     };
 
     tokenFile = mkOption {
+      description = ''
+        The path where the join-token for a node is located.
+      '';
       type = path;
       default = "/etc/k0s/k0stoken";
     };
 
     configText = mkOption {
-      default = "";
-      type = str;
       description = ''
         The configuration file in YAML format.
         A default will be generated if unset.
       '';
+      default = "";
+      type = str;
     };
 
     clusterName = mkOption {
-      type = str;
-      default = "k0s";
       description = ''
         The name of the cluster.
       '';
+      type = str;
+      default = "k0s";
     };
 
     config = {
@@ -74,38 +81,43 @@ in {
       };
 
       controllerManager.extraArgs = mkStringMapOption {
+        description = ''
+          Map of key-values (strings) for any extra arguments you want to pass down to the Kubernetes controller manager process.
+        '';
         example = ''
           {
             flex-volume-plugin-dir = "/etc/kubernetes/kubelet-plugins/volume/exec";
           }
         '';
-        description = ''
-          Map of key-values (strings) for any extra arguments you want to pass down to the Kubernetes controller manager process.
-        '';
       };
 
       scheduler.extraArgs = mkStringMapOption {
+        description = ''
+          Map of key-values (strings) for any extra arguments you want to pass down to Kubernetes scheduler process.
+        '';
         example = ''
           {
             config = "/path/to/config-file";
           }
         '';
-        description = ''
-          Map of key-values (strings) for any extra arguments you want to pass down to Kubernetes scheduler process.
-        '';
       };
 
       workerProfiles = mkOption {
+        description = ''
+          Worker profiles are used to manage worker-specific configuration in a centralized manner.
+          A ConfigMap is generated for each worker profile.
+          Based on the `--profile` argument given to the `k0s worker`,
+          the configuration in the corresponding ConfigMap is is picked up during startup.
+        '';
         type = listOf (submodule {
           options = {
             name = mkOption {
-              type = str;
               description = ''
                 Name to use as profile selector for the worker process
               '';
+              type = str;
             };
             values = mkOption {
-              type = attrsOf anything;
               description = ''
                 [Kubelet configuration](https://kubernetes.io/docs/reference/config-api/kubelet-config.v1beta1/) overrides.
                 Note that there are several fields that cannot be overridden:
@@ -115,16 +127,11 @@ in {
                 - `kind`
                 - `staticPodURL`
               '';
+              type = attrsOf anything;
             };
           };
         });
         default = [];
-        description = ''
-          Worker profiles are used to manage worker-specific configuration in a centralized manner.
-          A ConfigMap is generated for each worker profile.
-          Based on the `--profile` argument given to the `k0s worker`,
-          the configuration in the corresponding ConfigMap is is picked up during startup.
-        '';
       };
 
       featureGates = mkOption {
@@ -196,13 +203,11 @@ in {
         };
       };
 
-      telemetry = mkOption {
-        type = bool;
-        default = false;
-      };
+      telemetry = mkEnableOption "Wether or not telemetry should be sent to the k0s developers.";
 
       # TODO extensions
     };
+
   };
 
 

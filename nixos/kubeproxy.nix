@@ -9,22 +9,25 @@ in {
     '';
 
     mode = mkOption {
-      type = enum [ "iptables" "ipvs" "userspace" ];
-      default = "iptables";
       description = ''
         Kube proxy operating mode, supported modes iptables, ipvs, userspace (default: iptables).
       '';
+      type = enum [ "iptables" "ipvs" "userspace" ];
+      default = "iptables";
     };
 
     metricsBindAddress = mkOption {
-      type = str;
-      default = "0.0.0.0:10249";
       description = ''
         Address and port for exposing metrics of kube-proxy.
       '';
+      type = str;
+      default = "0.0.0.0:10249";
     };
 
     iptables = mkOption {
+      description = ''
+        Kube proxy iptables settings.
+      '';
       type = nullOr (attrsOf (attrTag {
         masqueradeBit = mkOption {
           type = nullOr int;
@@ -43,12 +46,12 @@ in {
         };
       }));
       default = null;
-      description = ''
-        Kube proxy iptables settings.
-      '';
     };
 
     ipvs = mkOption {
+      description = ''
+        Kube proxy ipvs settings.
+      '';
       type = nullOr (attrsOf (attrTag {
         syncPeriod = mkOption {
           type = str;
@@ -76,17 +79,14 @@ in {
         };
       }));
       default = null;
-      description = ''
-        Kube proxy ipvs settings.
-      '';
     };
 
     nodePortAddresses = mkOption {
-      type = nullOr (listOf str);
-      default = null;
       description = ''
         Kube proxy [nodePortAddresses](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-proxy/).
       '';
+      type = nullOr (listOf str);
+      default = null;
     };
 
   };
