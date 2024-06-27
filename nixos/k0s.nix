@@ -146,18 +146,8 @@ in {
       };
 
       images = let
-        imageModule = {
-          options = {
-            image = mkOption {
-              type = str;
-            };
-            version = mkOption {
-              type = str;
-            };
-          };
-        };
         imageOption = mkOption {
-          type = submodule imageModule;
+          type = submodule (import ./image.nix);
         };
       in mkOption {
         type = attrsOf (attrTag {
