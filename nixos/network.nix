@@ -74,7 +74,7 @@ in {
 
     kubeProxy = mkOption {
       description = "Defines the configuration for kube-proxy.";
-      type = submodule (import ./kubeproxy.nix);
+      type = submodule (import ./kubeProxy.nix);
       default = {};
     };
 

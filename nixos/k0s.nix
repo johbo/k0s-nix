@@ -109,7 +109,7 @@ in {
           Based on the `--profile` argument given to the `k0s worker`,
           the configuration in the corresponding ConfigMap is is picked up during startup.
         '';
-        type = listOf (submodule (import ./workerprofile.nix));
+        type = listOf (submodule (import ./workerProfile.nix));
         default = [];
       };
 
