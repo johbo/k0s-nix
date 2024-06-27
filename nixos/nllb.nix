@@ -22,11 +22,8 @@ in {
       type = submodule {
         options = {
           image = mkOption {
-            type = addCheck (submodule (import ./image.nix)) (s: s != {});
-            default = {
-              image = "quay.io/k0sproject/envoy-distroless";
-              version = "v1.30.2";
-            };
+            type = submodule (import ./image.nix);
+            default = {};
           };
           imagePullPolicy = mkOption {
             type = enum [ "Always" "Never" "IfNotPresent" "" ];
