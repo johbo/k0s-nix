@@ -15,6 +15,14 @@ in {
       '';
     };
 
+    metricsBindAddress = mkOption {
+      type = str;
+      default = "0.0.0.0:10249";
+      description = ''
+        Address and port for exposing metrics of kube-proxy.
+      '';
+    };
+
     iptables = mkOption {
       type = nullOr (attrsOf (attrTag {
         masqueradeBit = mkOption {
