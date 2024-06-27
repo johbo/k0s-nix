@@ -136,6 +136,6 @@ in {
       };
     };
 
-    telemetry = mkEnableOption "Wether or not telemetry should be sent to the k0s developers.";
+    telemetry.enabled = mkEnableOption "Wether or not telemetry should be sent to the k0s developers.";
   };
 }
