@@ -1,6 +1,6 @@
 { pkgs, lib, config, ... }@args: let
   inherit (lib) mkEnableOption mkPackageOption mkOption mkIf optionalString concatMapAttrs;
-  inherit (lib.types) str enum bool path nullOr attrsOf listOf attrTag submodule anything;
+  inherit (lib.types) str enum bool path attrsOf listOf attrTag submodule;
   util = import ./util.nix args;
   inherit (util) mkStringMapOption;
   cfg = config.services.k0s;
@@ -114,20 +114,7 @@ in {
       };
 
       featureGates = mkOption {
-        type = listOf (submodule {
-          options = {
-            name = mkOption {
-              type = str;
-            };
-            enabled = mkOption {
-              type = bool;
-            };
-            components = mkOption {
-              type = nullOr listOf enum [ "kube-apiserver" "kube-controller-manager" "kubelet" "kube-scheduler" "kube-proxy" ];
-              default = null;
-            };
-          };
-        });
+        type = listOf (submodule (import ./featureGate.nix));
         default = [];
       };
 
