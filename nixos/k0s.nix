@@ -80,6 +80,14 @@ in {
         default = {};
       };
 
+      extensions = mkOption {
+        description = "Specifies cluster extensions";
+        type = submodule (import ./extensions.nix);
+        default = {};
+      };
+
+      # TODO konnectivity
+
       controllerManager.extraArgs = mkStringMapOption {
         description = ''
           Map of key-values (strings) for any extra arguments you want to pass down to the Kubernetes controller manager process.
@@ -170,8 +178,6 @@ in {
       };
 
       telemetry = mkEnableOption "Wether or not telemetry should be sent to the k0s developers.";
-
-      # TODO extensions
     };
 
   };
