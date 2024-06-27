@@ -1,10 +1,13 @@
-{ lib, config, ... }@args: let
+{
+  lib,
+  config,
+  ...
+} @ args: let
   inherit (lib) mkEnableOption mkOption optionalAttrs;
   inherit (lib.types) str enum submodule;
   util = import ./util.nix args;
 in {
   options = {
-
     provider = mkOption {
       description = ''
         Network provider (valid values: `calico`, `kuberouter`, or `custom`).
@@ -13,7 +16,7 @@ in {
         including the CNI provider itself and all necessary host levels setups (for example, CNI binaries).
         **Note:** Once you initialize the cluster with a network provider the only way to change providers is through a full cluster redeployment.
       '';
-      type = enum [ "calico" "kuberouter" "custom" ];
+      type = enum ["calico" "kuberouter" "custom"];
       default = "kuberouter";
     };
 
@@ -54,7 +57,8 @@ in {
       default = {};
     });
 
-    dualStack = { # TODO add checks for dual stack
+    dualStack = {
+      # TODO add checks for dual stack
       enable = mkEnableOption "Defines whether or not IPv4/IPv6 dual-stack networking should be enabled.";
 
       IPv6podCIDR = util.mkOptionMandatoryIf config.dualStack.enable {
@@ -93,6 +97,5 @@ in {
       type = submodule (import ./cplb.nix);
       default = {};
     };
-
   };
 }

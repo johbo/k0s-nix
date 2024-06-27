@@ -1,9 +1,8 @@
-{ lib, ... }: let
+{lib, ...}: let
   inherit (lib) mkEnableOption mkOption;
   inherit (lib.types) str enum bool nullOr attrsOf listOf attrTag int;
 in {
   options = {
-
     disabled = mkEnableOption ''
       Disable kube-proxy altogether (default: `false`).
     '';
@@ -12,7 +11,7 @@ in {
       description = ''
         Kube proxy operating mode, supported modes iptables, ipvs, userspace (default: iptables).
       '';
-      type = enum [ "iptables" "ipvs" "userspace" ];
+      type = enum ["iptables" "ipvs" "userspace"];
       default = "iptables";
     };
 
@@ -88,6 +87,5 @@ in {
       type = nullOr (listOf str);
       default = null;
     };
-
   };
 }

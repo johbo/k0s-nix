@@ -1,16 +1,20 @@
-{ lib, config, dataDir, ... }@args: let
+{
+  lib,
+  config,
+  dataDir,
+  ...
+} @ args: let
   inherit (lib) mkOption optionalAttrs;
   inherit (lib.types) str enum nullOr listOf submodule addCheck;
   util = import ./util.nix args;
 in {
   options = {
-
     type = mkOption {
       description = ''
         Type of the data store (valid values: `etcd` or `kine`).
         **Note:** Type `etcd` will cause k0s to create and manage an elastic etcd cluster within the controller nodes.
       '';
-      type = enum [ "etcd" "kine" ];
+      type = enum ["etcd" "kine"];
       default = "etcd";
     };
 
@@ -95,6 +99,5 @@ in {
         default = "sqlite://${dataDir}/db/state.db?mode=rwc&_journal=WAL&cache=shared";
       };
     };
-
   };
 }

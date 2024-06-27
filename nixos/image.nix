@@ -1,4 +1,4 @@
-{ lib, ... }: {
+{lib, ...}: {
   options = {
     image = lib.mkOption {
       type = lib.types.str;

@@ -1,8 +1,11 @@
-{ lib, ... }: let
+{lib, ...}: let
   inherit (lib) mkOption literalExpression;
   inherit (lib.types) str attrsOf;
 in {
-  mkStringMapOption = { example, description }: (mkOption {
+  mkStringMapOption = {
+    example,
+    description,
+  }: (mkOption {
     type = attrsOf str;
     default = {};
     example = literalExpression example;
@@ -10,6 +13,9 @@ in {
   });
 
   mkOptionMandatoryIf = condition: option: default:
-    mkOption (if condition then option
-      else option // { inherit default; });
+    mkOption (
+      if condition
+      then option
+      else option // {inherit default;}
+    );
 }

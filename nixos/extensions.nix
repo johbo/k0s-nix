@@ -1,12 +1,11 @@
-{ lib, ... }@args: let
+{lib, ...} @ args: let
   inherit (lib) mkOption;
   inherit (lib.types) nullOr int str enum bool listOf addCheck submodule;
 in {
   options = {
-
     storage = {
       type = mkOption {
-        type = enum [ "external_storage" "openebs_local_storage" ];
+        type = enum ["external_storage" "openebs_local_storage"];
         default = "external_storage";
       };
 
@@ -107,6 +106,5 @@ in {
         default = [];
       };
     };
-
   };
 }

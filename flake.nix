@@ -3,7 +3,7 @@
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
 
-  outputs = { nixpkgs }:
+  outputs = { nixpkgs, ... }:
     let
 
       genPackages = pkgs: rec {

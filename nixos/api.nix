@@ -1,10 +1,9 @@
-{ lib, ... }@args: let
+{lib, ...} @ args: let
   inherit (lib) mkOption;
   inherit (lib.types) str listOf port;
   util = import ./util.nix args;
 in {
   options = {
-
     address = mkOption {
       description = ''
         Required. Local address on which to bind an API.
@@ -65,6 +64,5 @@ in {
       '';
       type = listOf str;
     };
-
   };
 }

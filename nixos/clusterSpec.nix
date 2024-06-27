@@ -1,11 +1,14 @@
-{ lib, dataDir, ... }@args: let
+{
+  lib,
+  dataDir,
+  ...
+} @ args: let
   inherit (lib) mkEnableOption mkOption;
   inherit (lib.types) str port enum attrsOf listOf attrTag submodule;
   util = import ./util.nix args;
   inherit (util) mkStringMapOption;
 in {
   options = {
-
     api = mkOption {
       description = "Defines the settings for the K0s API.";
       type = submodule (import ./api.nix);
@@ -14,7 +17,7 @@ in {
 
     storage = mkOption {
       description = "Defines the storage related config options.";
-      type = submodule (a: (import ./storage.nix (a // { inherit dataDir; })));
+      type = submodule (a: (import ./storage.nix (a // {inherit dataDir;})));
       default = {};
     };
 
@@ -85,29 +88,30 @@ in {
       imageOption = mkOption {
         type = submodule (import ./image.nix);
       };
-    in mkOption {
-      type = attrsOf (attrTag {
-        konnectivity = imageOption;
-        pushgateway = imageOption;
-        metricsserver = imageOption;
-        kubeproxy = imageOption;
-        coredns = imageOption;
-        pause = imageOption;
-        calico.cni = imageOption;
-        calico.flexvolume = imageOption;
-        calico.node = imageOption;
-        calico.kubecontrollers = imageOption;
-        kuberouter.cni = imageOption;
-        kuberouter.cniInstaller = imageOption;
-        repository = mkOption {
-          type = str;
-        };
-        default_pull_policy = mkOption {
-          type = enum [ "Always" "Never" "IfNotPresent" ];
-        };
-      });
-      default = {};
-    };
+    in
+      mkOption {
+        type = attrsOf (attrTag {
+          konnectivity = imageOption;
+          pushgateway = imageOption;
+          metricsserver = imageOption;
+          kubeproxy = imageOption;
+          coredns = imageOption;
+          pause = imageOption;
+          calico.cni = imageOption;
+          calico.flexvolume = imageOption;
+          calico.node = imageOption;
+          calico.kubecontrollers = imageOption;
+          kuberouter.cni = imageOption;
+          kuberouter.cniInstaller = imageOption;
+          repository = mkOption {
+            type = str;
+          };
+          default_pull_policy = mkOption {
+            type = enum ["Always" "Never" "IfNotPresent"];
+          };
+        });
+        default = {};
+      };
 
     installConfig.users = {
       etcdUser = mkOption {
@@ -133,6 +137,5 @@ in {
     };
 
     telemetry = mkEnableOption "Wether or not telemetry should be sent to the k0s developers.";
-
   };
 }
