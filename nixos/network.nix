@@ -1,6 +1,6 @@
 { lib, config, ... }@args: let
   inherit (lib) mkEnableOption mkOption optionalAttrs;
-  inherit (lib.types) str enum nullOr attrsOf listOf port attrTag ints submodule addCheck;
+  inherit (lib.types) str enum nullOr listOf ints submodule addCheck;
   util = import ./util.nix args;
 in {
   options = {
@@ -78,45 +78,14 @@ in {
       default = {};
     };
 
-    nodeLocalLoadBalancing = {
-      enabled = mkEnableOption "Indicates if node-local load balancing should be used to access Kubernetes API servers from worker nodes. Default: `false`.";
+    nodeLocalLoadBalancing = mkOption {
+      description = ''
+        Configuration options related to k0s's node-local load balancing feature.
 
-      type = mkOption {
-        type = enum [ "EnvoyProxy" ];
-        default = "EnvoyProxy";
-        description = ''
-          The type of the node-local load balancer to deploy on worker nodes.
-          Default: `EnvoyProxy`. (This is the only option for now.)
-        '';
-      };
-
-      envoyProxy = optionalAttrs (config.nodeLocalLoadBalancing.type == "EnvoyProxy") (mkOption {
-        type = nullOr (attrsOf (attrTag {
-          image = mkOption {
-            type = nullOr attrsOf (attrTag {
-              image = mkOption {
-                type = str;
-              };
-              version = mkOption {
-                type = str;
-              };
-            });
-          };
-          imagePullPolicy = mkOption {
-            type = enum [ "Always" "Never" "IfNotPresent" ];
-          };
-          apiServerBindPort = mkOption {
-            type = port;
-          };
-          konnectivityServerBindPort = mkOption {
-            type = nullOr port;
-          };
-        }));
-        default = null;
-        description = ''
-          Configuration options related to the "EnvoyProxy" type of load balancing.
-        '';
-      });
+        **Note:** This feature is currently unsupported on ARMv7!
+      '';
+      type = submodule (import ./nllb.nix);
+      default = {};
     };
 
     controlPlaneLoadBalancing = {
