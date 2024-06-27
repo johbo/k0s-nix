@@ -1,6 +1,6 @@
 { lib, config, ... }: let
   inherit (lib) mkEnableOption mkOption optionalAttrs;
-  inherit (lib.types) enum port submodule addCheck;
+  inherit (lib.types) enum port submodule;
 in {
   options = {
 

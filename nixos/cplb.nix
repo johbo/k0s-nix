@@ -1,6 +1,6 @@
 { lib, config, ... }: let
   inherit (lib) mkEnableOption mkOption optionalAttrs;
-  inherit (lib.types) str enum nullOr listOf ints submodule addCheck;
+  inherit (lib.types) str enum listOf ints submodule addCheck;
 in {
   options = {
 
