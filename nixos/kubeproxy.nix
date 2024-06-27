@@ -3,6 +3,7 @@
   inherit (lib.types) str enum bool nullOr attrsOf listOf attrTag int;
 in {
   options = {
+
     disabled = mkEnableOption ''
       Disable kube-proxy altogether (default: `false`).
     '';
@@ -87,5 +88,6 @@ in {
         Kube proxy [nodePortAddresses](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-proxy/).
       '';
     };
+
   };
 }
