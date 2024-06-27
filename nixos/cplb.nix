@@ -29,7 +29,7 @@ in {
               Configuration options related to the VRRP. This is an array which allows
               to configure multiple virtual IPs.
             '';
-            type = listOf submodule {
+            type = listOf (submodule {
               options = {
                 virtualIPs = mkOption {
                   description = ''
@@ -72,7 +72,7 @@ in {
                   type = addCheck str (s: let len = builtins.stringLength s; in len >= 1 && len <= 8);
                 };
               };
-            };
+            });
             default = [];
           };
 
@@ -81,7 +81,7 @@ in {
               Configuration options related to the virtual servers. This is an array
               which allows to configure multiple load balancers.
             '';
-            type = listOf submodule {
+            type = listOf (submodule {
               options = {
                 ipAddress = mkOption {
                   description = ''
@@ -126,7 +126,7 @@ in {
                   default = 360;
                 };
               };
-            };
+            });
             default = [];
           };
         };
