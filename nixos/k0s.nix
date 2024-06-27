@@ -1,6 +1,6 @@
 { pkgs, lib, config, ... }@args: let
   inherit (lib) mkEnableOption mkPackageOption mkOption mkIf optionalString concatMapAttrs;
-  inherit (lib.types) str enum bool path attrsOf listOf attrTag submodule;
+  inherit (lib.types) str port enum bool path attrsOf listOf attrTag submodule;
   util = import ./util.nix args;
   inherit (util) mkStringMapOption;
   cfg = config.services.k0s;
@@ -81,12 +81,23 @@ in {
       };
 
       extensions = mkOption {
-        description = "Specifies cluster extensions";
+        description = "Specifies cluster extensions.";
         type = submodule (import ./extensions.nix);
         default = {};
       };
 
-      # TODO konnectivity
+      konnectivity = {
+        adminPort = mkOption {
+          description = "Admin port to listen on.";
+          type = port;
+          default = 8133;
+        };
+        agentPort = mkOption {
+          description = "Agent port to listen on.";
+          type = port;
+          default = 8132;
+        };
+      };
 
       controllerManager.extraArgs = mkStringMapOption {
         description = ''
