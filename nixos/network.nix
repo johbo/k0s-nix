@@ -1,6 +1,7 @@
 { lib, config, ... }@args: let
   inherit (lib) mkEnableOption mkOption optionalAttrs;
   inherit (lib.types) str enum nullOr attrsOf listOf port attrTag ints submodule addCheck;
+  util = import ./util.nix args;
 in {
   options = {
 
@@ -50,23 +51,19 @@ in {
     dualStack = {
       enable = mkEnableOption "Defines whether or not IPv4/IPv6 dual-stack networking should be enabled.";
 
-      IPv6podCIDR = mkOption (let
-        option = {
-          type = str;
-          description = ''
-            IPv6 Pod network CIDR to use in the cluster.
-          '';
-        };
-      in if config.dualStack.enable then option else option // { default = ""; });
+      IPv6podCIDR = util.mkOptionMandatoryIf config.dualStack.enable {
+        type = str;
+        description = ''
+          IPv6 Pod network CIDR to use in the cluster.
+        '';
+      } "";
 
-      IPv6serviceCIDR = mkOption (let
-        option = {
-          type = str;
-          description = ''
-            IPv6 Network CIDR to use for cluster VIP services.
-          '';
-        };
-      in if config.dualStack.enable then option else option // { default = ""; });
+      IPv6serviceCIDR = util.mkOptionMandatoryIf config.dualStack.enable {
+        type = str;
+        description = ''
+          IPv6 Network CIDR to use for cluster VIP services.
+        '';
+      } "";
     };
 
     kuberouter = optionalAttrs (config.provider == "kuberouter") (mkOption {

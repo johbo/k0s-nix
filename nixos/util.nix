@@ -8,4 +8,8 @@ in {
     example = literalExpression example;
     description = description;
   });
+
+  mkOptionMandatoryIf = condition: option: default:
+    mkOption (if condition then option
+      else option // { inherit default; });
 }

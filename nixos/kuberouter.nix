@@ -13,14 +13,12 @@ in {
       '';
     };
 
-    mtu = mkOption (let
-      option = {
-        type = ints.unsigned;
-        description = ''
-          Override MTU setting, if `autoMTU` must be set to `false`).
-        '';
-      };
-    in if (!config.autoMTU) then option else option // { default = 0; }); # TODO extract this into a util
+    mtu = util.mkOptionMandatoryIf (!config.autoMTU) {
+      type = ints.unsigned;
+      description = ''
+        Override MTU setting, if `autoMTU` must be set to `false`).
+      '';
+    } 0;
 
     metricsPort = mkOption {
       type = port;
