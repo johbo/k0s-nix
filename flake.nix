@@ -3,7 +3,7 @@
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
 
-  outputs = { self, nixpkgs }:
+  outputs = { nixpkgs }:
     let
 
       genPackages = pkgs: rec {
@@ -33,7 +33,7 @@
       nixosConfigurations = {
         test = nixpkgs.lib.nixosSystem {
           modules = [
-            ({
+            {
               nixpkgs.system = "x86_64-linux";
               nixpkgs.pkgs = import nixpkgs {
                 system = "x86_64-linux";
@@ -41,9 +41,9 @@
                   overlays.default
                 ];
               };
-            })
+            }
             ./nixos/k0s.nix
-            ({pkgs, ... }: {
+            ({ ... }: {
               boot.isContainer = true;
 
               services.k0s = {
@@ -55,8 +55,8 @@
                 # it has to be flagged with "isLeader".
                 # isLeader = true;
 
-                config.api.address = "192.0.2.1";
-                config.api.sans = [
+                spec.api.address = "192.0.2.1";
+                spec.api.sans = [
                   "192.0.2.1"
                   "192.0.2.2"
                 ];
