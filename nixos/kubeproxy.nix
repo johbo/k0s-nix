@@ -1,4 +1,4 @@
-{ lib, ... }@args: let
+{ lib, ... }: let
   inherit (lib) mkEnableOption mkOption;
   inherit (lib.types) str enum bool nullOr attrsOf listOf attrTag int;
 in {

@@ -1,5 +1,5 @@
 { lib, config, ... }@args: let
-  inherit (lib) mkEnableOption mkOption optionalString;
+  inherit (lib) mkEnableOption mkOption;
   inherit (lib.types) str enum path port ints addCheck;
   util = import ./util.nix args;
 in {

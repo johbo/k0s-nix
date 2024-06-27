@@ -1,6 +1,6 @@
 { lib, config, dataDir, ... }@args: let
   inherit (lib) mkOption optionalAttrs;
-  inherit (lib.types) str enum path nullOr attrsOf listOf port attrTag submodule addCheck;
+  inherit (lib.types) str enum nullOr listOf submodule addCheck;
   util = import ./util.nix args;
 in {
   options = {

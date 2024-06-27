@@ -1,6 +1,6 @@
-{ lib, config, ... }@args: let
+{ lib, ... }@args: let
   inherit (lib) mkOption;
-  inherit (lib.types) str nullOr attrsOf listOf port;
+  inherit (lib.types) str listOf port;
   util = import ./util.nix args;
 in {
   options = {
