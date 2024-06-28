@@ -58,8 +58,7 @@ in {
       default = {};
     });
 
-    dualStack = {
-      # TODO check if provider is calico and mode is bird
+    dualStack = optionalAttrs (config.provider == "calico" && config.calico.mode == "bird") {
       enabled = mkEnableOption "Defines whether or not IPv4/IPv6 dual-stack networking should be enabled.";
 
       IPv6podCIDR = util.mkOptionMandatoryIf config.dualStack.enabled {
