@@ -2,9 +2,10 @@
   lib,
   config,
   ...
-}: let
+} @ args: let
   inherit (lib) mkEnableOption mkOption optionalAttrs;
-  inherit (lib.types) enum port submodule;
+  inherit (lib.types) enum port submodule nullOr;
+  customTypes = import ./types.nix args;
 in {
   options = {
     enabled = mkEnableOption "Indicates if node-local load balancing should be used to access Kubernetes API servers from worker nodes. Default: `false`.";
@@ -25,10 +26,12 @@ in {
       type = submodule {
         options = {
           image = mkOption {
-            type = submodule (import ./image.nix);
-            default = {};
+            description = "Image to use for envoy proxy. k0s sets its default if null.";
+            type = nullOr customTypes.image;
+            default = null;
           };
           imagePullPolicy = mkOption {
+            description = "Pull policy to use when pulling the envoy proxy image. k0s sets its default if empty.";
             type = enum ["Always" "Never" "IfNotPresent" ""];
             default = "";
           };

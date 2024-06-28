@@ -1,6 +1,7 @@
 {lib, ...} @ args: let
   inherit (lib) mkOption;
   inherit (lib.types) nullOr int str enum bool listOf addCheck submodule;
+  customTypes = import ./types.nix args;
 in {
   options = {
     storage = {
@@ -39,17 +40,17 @@ in {
             };
             caFile = mkOption {
               description = "CA bundle file to use when verifying HTTPS-enabled servers.";
-              type = str;
+              type = customTypes.emptyOrPath;
               default = "";
             };
             certFile = mkOption {
               description = "The TLS certificate file to use for HTTPS client authentication.";
-              type = str;
+              type = customTypes.emptyOrPath;
               default = "";
             };
             keyFile = mkOption {
               description = "The TLS key file to use for HTTPS client authentication.";
-              type = str;
+              type = customTypes.emptyOrPath;
               default = "";
             };
             username = mkOption {

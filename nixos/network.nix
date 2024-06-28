@@ -6,6 +6,7 @@
   inherit (lib) mkEnableOption mkOption optionalAttrs;
   inherit (lib.types) str enum submodule;
   util = import ./util.nix args;
+  customTypes = import ./types.nix args;
 in {
   options = {
     provider = mkOption {
@@ -24,15 +25,15 @@ in {
       description = ''
         Pod network CIDR to use in the cluster.
       '';
-      type = str;
-      default = "10.244.0.0/16"; # TODO validate CIDR
+      type = customTypes.cidr;
+      default = "10.244.0.0/16";
     };
 
     serviceCIDR = mkOption {
       description = ''
         Network CIDR to use for cluster VIP services.
       '';
-      type = str;
+      type = customTypes.cidr;
       default = "10.96.0.0/12";
     };
 
@@ -41,8 +42,8 @@ in {
         Cluster Domain to be passed to the [kubelet](https://kubernetes.io/docs/reference/config-api/kubelet-config.v1beta1/#kubelet-config-k8s-io-v1beta1-KubeletConfiguration)
         and the coredns configuration.
       '';
-      type = str;
-      default = "cluster.local"; # TODO validate domain
+      type = customTypes.dnsName;
+      default = "cluster.local";
     };
 
     kuberouter = optionalAttrs (config.provider == "kuberouter") (mkOption {
@@ -58,21 +59,27 @@ in {
     });
 
     dualStack = {
-      # TODO add checks for dual stack
-      enable = mkEnableOption "Defines whether or not IPv4/IPv6 dual-stack networking should be enabled.";
+      # TODO check if provider is calico and mode is bird
+      enabled = mkEnableOption "Defines whether or not IPv4/IPv6 dual-stack networking should be enabled.";
 
       IPv6podCIDR = util.mkOptionMandatoryIf config.dualStack.enable {
         description = ''
           IPv6 Pod network CIDR to use in the cluster.
         '';
-        type = str;
+        type =
+          if config.dualStack.enable
+          then customTypes.cidrV6
+          else str;
       } "";
 
       IPv6serviceCIDR = util.mkOptionMandatoryIf config.dualStack.enable {
         description = ''
           IPv6 Network CIDR to use for cluster VIP services.
         '';
-        type = str;
+        type =
+          if config.dualStack.enable
+          then customTypes.cidrV6
+          else str;
       } "";
     };
 

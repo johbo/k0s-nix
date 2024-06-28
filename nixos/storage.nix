@@ -7,6 +7,7 @@
   inherit (lib) mkOption optionalAttrs;
   inherit (lib.types) str enum nullOr listOf submodule addCheck;
   util = import ./util.nix args;
+  customTypes = import ./types.nix args;
 in {
   options = {
     type = mkOption {
@@ -23,7 +24,7 @@ in {
         description = ''
           Node address used for etcd cluster peering.
         '';
-        type = str;
+        type = customTypes.ip;
         default = "127.0.0.1";
       };
 
@@ -53,7 +54,7 @@ in {
               description = ''
                 Array of Etcd endpoints to use.
               '';
-              type = addCheck (listOf (addCheck str (s: builtins.stringLength s >= 1))) (l: builtins.length l > 0);
+              type = addCheck (listOf (addCheck customTypes.ipOrDnsName)) (l: builtins.length l > 0);
             };
             etcdPrefix = mkOption {
               description = ''
@@ -67,21 +68,21 @@ in {
               description = ''
                 CaFile is the host path to a file with Etcd cluster CA certificate.
               '';
-              type = str;
+              type = customTypes.emptyOrPath;
               default = "";
             };
             clientCertFile = mkOption {
               description = ''
                 ClientCertFile is the host path to a file with TLS certificate for etcd client.
               '';
-              type = str;
+              type = customTypes.emptyOrPath;
               default = "";
             };
             clientKeyFile = mkOption {
               description = ''
                 ClientKeyFile is the host path to a file with TLS key for etcd client.
               '';
-              type = str;
+              type = customTypes.emptyOrPath;
               default = "";
             };
           };

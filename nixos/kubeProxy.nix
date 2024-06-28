@@ -1,6 +1,7 @@
-{lib, ...}: let
+{lib, ...} @ args: let
   inherit (lib) mkEnableOption mkOption;
   inherit (lib.types) str enum bool nullOr attrsOf listOf attrTag int;
+  customTypes = import ./types.nix args;
 in {
   options = {
     disabled = mkEnableOption ''
@@ -19,7 +20,7 @@ in {
       description = ''
         Address and port for exposing metrics of kube-proxy.
       '';
-      type = str;
+      type = customTypes.ipWithPort;
       default = "0.0.0.0:10249";
     };
 
@@ -62,7 +63,7 @@ in {
           type = str;
         };
         excludedCIDRs = mkOption {
-          type = nullOr (listOf str);
+          type = nullOr (listOf customTypes.cidr);
         };
         strictARP = mkOption {
           type = bool;
@@ -84,7 +85,7 @@ in {
       description = ''
         Kube proxy [nodePortAddresses](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-proxy/).
       '';
-      type = nullOr (listOf str);
+      type = nullOr (listOf customTypes.cidr);
       default = null;
     };
   };

@@ -53,6 +53,9 @@ in {
       default = "k0s";
     };
 
+    # TODO make it possible to configure certificates
+    # this can be done by specifying paths which will then get copied or symlinked into the pki dir
+
     spec = mkOption {
       description = ''
         Defines the desired state of the cluster config.

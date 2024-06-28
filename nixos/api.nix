@@ -1,7 +1,8 @@
 {lib, ...} @ args: let
   inherit (lib) mkOption;
-  inherit (lib.types) str listOf port;
+  inherit (lib.types) listOf port either enum;
   util = import ./util.nix args;
+  customTypes = import ./types.nix args;
 in {
   options = {
     address = mkOption {
@@ -10,7 +11,7 @@ in {
         Also serves as one of the addresses pushed on the k0s create service certificate on the API.
       '';
       # No default, has to be provided
-      type = str; # TODO validate IP
+      type = customTypes.ip;
     };
 
     externalAddress = mkOption {
@@ -19,7 +20,7 @@ in {
         Configures all cluster components to connect to this address and also configures
         this address for use when joining new nodes to the cluster.
       '';
-      type = str;
+      type = either (enum [""]) customTypes.ipOrDnsName;
       default = "";
     };
 
@@ -62,7 +63,7 @@ in {
       description = ''
         Required. List of additional addresses to push to API servers serving the certificate.
       '';
-      type = listOf str;
+      type = listOf customTypes.ipOrDnsName;
     };
   };
 }

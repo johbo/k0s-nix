@@ -2,9 +2,10 @@
   lib,
   config,
   ...
-}: let
+} @ args: let
   inherit (lib) mkEnableOption mkOption optionalAttrs;
   inherit (lib.types) str enum listOf ints submodule addCheck;
+  customTypes = import ./types.nix args;
 in {
   options = {
     enabled = mkEnableOption "Indicates if control plane load balancing should be enabled. Default: `false`.";
@@ -36,7 +37,7 @@ in {
                     The list of virtual IP address used by the VRRP instance.
                     Each virtual IP must be a CIDR as defined in RFC 4632 and RFC 4291.
                   '';
-                  type = addCheck (listOf str) (l: builtins.length l > 0);
+                  type = addCheck (listOf customTypes.cidr) (l: builtins.length l > 0);
                 };
                 interface = mkOption {
                   description = ''
@@ -87,7 +88,7 @@ in {
                   description = ''
                     The virtual IP address used by the virtual server.
                   '';
-                  type = addCheck str (s: builtins.stringLength s >= 1);
+                  type = addCheck customTypes.ip (s: builtins.stringLength s >= 1);
                 };
                 delayLoop = mkOption {
                   description = ''

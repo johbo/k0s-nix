@@ -7,6 +7,7 @@
   inherit (lib.types) str port enum attrsOf listOf attrTag submodule;
   util = import ./util.nix args;
   inherit (util) mkStringMapOption;
+  customTypes = import ./types.nix args;
 in {
   options = {
     api = mkOption {
@@ -86,7 +87,7 @@ in {
 
     images = let
       imageOption = mkOption {
-        type = submodule (import ./image.nix);
+        type = customTypes.image;
       };
     in
       mkOption {
