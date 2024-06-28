@@ -60,6 +60,17 @@
                   "192.0.2.1"
                   "192.0.2.2"
                 ];
+
+                # Test non-default options:
+                #
+                # spec.network.provider = "calico";
+                # spec.network.calico.mode = "bird";
+                # spec.network.dualStack.enabled = true;
+                # spec.network.dualStack.IPv6podCIDR = "fd00::/108";
+                # spec.network.dualStack.IPv6serviceCIDR = "fd01::/108";
+                # spec.network.controlPlaneLoadBalancing.enabled = true;
+                # spec.network.nodeLocalLoadBalancing.enabled = true;
+                # spec.storage.type = "kine";
               };
 
               system.stateVersion = "24.05";
