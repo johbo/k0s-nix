@@ -62,22 +62,22 @@ in {
       # TODO check if provider is calico and mode is bird
       enabled = mkEnableOption "Defines whether or not IPv4/IPv6 dual-stack networking should be enabled.";
 
-      IPv6podCIDR = util.mkOptionMandatoryIf config.dualStack.enable {
+      IPv6podCIDR = util.mkOptionMandatoryIf config.dualStack.enabled {
         description = ''
           IPv6 Pod network CIDR to use in the cluster.
         '';
         type =
-          if config.dualStack.enable
+          if config.dualStack.enabled
           then customTypes.cidrV6
           else str;
       } "";
 
-      IPv6serviceCIDR = util.mkOptionMandatoryIf config.dualStack.enable {
+      IPv6serviceCIDR = util.mkOptionMandatoryIf config.dualStack.enabled {
         description = ''
           IPv6 Network CIDR to use for cluster VIP services.
         '';
         type =
-          if config.dualStack.enable
+          if config.dualStack.enabled
           then customTypes.cidrV6
           else str;
       } "";
