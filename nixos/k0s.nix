@@ -122,7 +122,7 @@ in {
             + optionalString (cfg.role == "controller+worker") " --enable-worker --no-taints"
             + optionalString (cfg.role != "single" && !cfg.isLeader) " --token-file=${cfg.tokenFile}";
         };
-        unitConfig = mkIf (!cfg.isLeader) {
+        unitConfig = mkIf (cfg.role != "single" && !cfg.isLeader) {
           ConditionPathExists = cfg.tokenFile;
         };
       };
