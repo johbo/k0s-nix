@@ -77,6 +77,10 @@ in {
       then "worker"
       else "controller";
     unitName = "k0s" + subcommand;
+    specFile = (pkgs.formats.yaml {}).generate "spec.yaml" cfg.spec;
+    spec = builtins.readFile specFile;
+    specLines = lib.strings.splitString "\n" spec;
+    indentedSpec = lib.strings.concatMapStrings (l: "  ${l}\n") specLines;
     configFile =
       if cfg.configText != ""
       then pkgs.writeText "k0s.yaml" cfg.configText
@@ -87,7 +91,8 @@ in {
           kind: Cluster
           metadata:
             name: ${cfg.clusterName}
-          spec: ${lib.generators.toYAML {} cfg.spec}
+          spec:
+          ${indentedSpec}
         '';
   in
     mkIf cfg.enable {
