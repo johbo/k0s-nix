@@ -11,6 +11,7 @@ let
     k0s_1_27 = import ./1_27.nix;
     k0s_1_28 = import ./1_28.nix;
     k0s_1_30 = import ./1_30.nix;
+    k0s_1_31 = import ./1_31.nix;
   };
 in
 builtins.mapAttrs
