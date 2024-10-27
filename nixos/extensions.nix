@@ -67,7 +67,6 @@ in {
         });
         default = [];
       };
-url
       charts = mkOption {
         type = listOf (submodule {
           options = {
