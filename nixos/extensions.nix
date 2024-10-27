@@ -67,7 +67,7 @@ in {
         });
         default = [];
       };
-
+url
       charts = mkOption {
         type = listOf (submodule {
           options = {
@@ -81,7 +81,8 @@ in {
             };
             values = mkOption {
               description = "The YAML values to pass for the helm chart installation";
-              type = addCheck str (s: s != "");
+              type = str;
+              default = "";
             };
             version = mkOption {
               description = "The version of the chart to install. Leaving this empty defaults to the latest.";
