@@ -67,7 +67,7 @@ in {
         });
         default = [];
       };
-      
+
       charts = mkOption {
         type = listOf (submodule {
           options = {
