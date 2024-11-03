@@ -93,12 +93,14 @@ in {
       environment.etc."k0s/k0s.yaml".source = configFile;
 
       ## START MANIFESTS
-      environment.etc = mapAttrs (name: content:
+      environment.etc = mkMerge [ 
+        (mapAttrs (name: content:
         nameValuePair "k0s/manifests/${name}" {
           text = content;
           mode = "0644";
         }
-      ) cfg.spec.extensions.manifests;
+      ) cfg.spec.extensions.manifests);
+      ];
 
       systemd.tmpfiles.rules = [
         "d /var/lib/k0s/manifests 0755 k0s k0s -"
