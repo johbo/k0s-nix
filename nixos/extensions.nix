@@ -106,8 +106,9 @@ in {
         });
         default = [];
       };
+    };
 
-      manifests = mkOption {
+    manifests = mkOption {
         type = listOf (submodule {
           name = mkOption {
             description = ''
@@ -126,6 +127,5 @@ in {
         });
         default = [];
       };
-    };
   };
 }
