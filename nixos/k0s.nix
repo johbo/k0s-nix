@@ -95,7 +95,7 @@ in {
       systemd.tmpfiles.rules = [
         "d /var/lib/k0s/manifests 0755 k0s k0s -"
         "L /var/lib/k0s/manifests - - - - /etc/k0s/manifests"
-      ]
+      ];
 
       ## END MANIFESTS
 
