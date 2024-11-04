@@ -92,15 +92,6 @@ in {
     mkIf cfg.enable {
       environment.etc."k0s/k0s.yaml".source = configFile;
 
-      environment.etc = lib.mkMerge [
-        config.environment.etc
-        (lib.mapAttrsToList (name: value: {
-          inherit name;
-          text = value;
-          mode = "0644";
-        }) config.spec.extensions.manifests)
-      ];
-      
       systemd.tmpfiles.rules = [
         "d /var/lib/k0s/manifests 0755 k0s k0s -"
         "L /var/lib/k0s/manifests - - - - /etc/k0s/manifests"
