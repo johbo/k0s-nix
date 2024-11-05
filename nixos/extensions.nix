@@ -109,16 +109,16 @@ in {
     };
 
     manifests = mkOption {
-      type = types.listOf (types.submodule ({
+      type = listOf (submodule {
         options = {
-          name = mkOption {
+          file = mkOption {
             description = ''
               Name of the YAML file to be placed in /var/lib/k0s/manifests/.
             '';
             type = types.str;
             default = "";
           };
-          yaml = mkOption {
+          text = mkOption {
             description = ''
               YAML manifest contents
             '';
@@ -126,7 +126,7 @@ in {
             default = "";
           };
         };
-      }));
+      });
       default = [];
       description = "List of YAML manifests with names and contents.";
 
