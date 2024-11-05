@@ -90,7 +90,7 @@ in {
         };
   in
     mkIf cfg.enable {
-      etc.environment = {
+      environment.etc = {
         "k0s/k0s.yaml".source = configFile;
       } // 
       builtins.listToAttrs (map (key: {

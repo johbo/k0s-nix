@@ -115,14 +115,14 @@ in {
             description = ''
               Name of the YAML file to be placed in /var/lib/k0s/manifests/.
             '';
-            type = types.str;
+            type = str;
             default = "";
           };
           text = mkOption {
             description = ''
               YAML manifest contents
             '';
-            type = types.str;
+            type = str;
             default = "";
           };
         };
