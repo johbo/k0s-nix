@@ -94,7 +94,7 @@ in {
         "k0s/k0s.yaml".source = configFile;
       } // 
       builtins.listToAttrs (map (key: {
-        name = key.name;
+        name = key;
         text = key.text;
       }) cfg.spec.extensions.manifests);
       
