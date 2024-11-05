@@ -93,10 +93,7 @@ in {
       environment.etc = {
         "k0s/k0s.yaml".source = configFile;
       } // 
-      builtins.listToAttrs (map (key: {
-        name = key;
-        text = key.text;
-      }) cfg.spec.extensions.manifests);
+      cfg.spec.extensions.manifests;
       
       systemd.tmpfiles.rules = [
         "d /var/lib/k0s/manifests 0755 k0s k0s -"
