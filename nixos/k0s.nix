@@ -94,10 +94,8 @@ in {
         "k0s/k0s.yaml".source = configFile;
       } // 
       builtins.listToAttrs (map (manifest: {
-        name = manifest.name;
-        value = {
+        manifest.name = {
           text = manifest.text;
-          destination = "/var/lib/k0s/manifests/${manifest.name}";
         };
       })) cfg.spec.extensions.manifests;
       
