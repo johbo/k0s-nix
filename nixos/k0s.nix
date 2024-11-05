@@ -70,6 +70,14 @@ in {
       type = str;
     };
 
+    manifest = mkOption {
+      description = ''
+        Text of the yaml file to be placed in /var/lib/k0s/manifests
+      '';
+      default = "";
+      type = str;
+    };
+
   };
 
   config = let
@@ -92,7 +100,7 @@ in {
     mkIf cfg.enable {
       environment.etc = {
         "k0s/k0s.yaml".source = configFile;
-        "k0s/manifests.yaml".text = cfg.spec.extensions.manifest;
+        "k0s/manifests.yaml".text = cfg.manifest;
       };
 
       systemd.tmpfiles.rules = [

@@ -107,14 +107,6 @@ in {
         default = [];
       };
     };
-    
-    manifest = mkOption {
-      description = ''
-        Textt of the yaml file to be placed in /var/lib/k0s/manifests
-      '';
-      type = str;
-      default = "";
-    };
       
   };
 }
