@@ -108,24 +108,13 @@ in {
       };
     };
     
-    manifests = mkOption {
-      type = listOf (submodule {
-        name = mkOption {
-          description = ''
-            Name of the yaml file to be placed in /var/lib/k0s/manifests
-          '';
-          type = str;
-          default = "";
-        };
-        text = mkOption {
-          description = ''
-            Yaml manifest contents
-          '';
-          type = str;
-          default = "";
-        };
-      });
-      default = [];
+    manifest = mkOption {
+      description = ''
+        Textt of the yaml file to be placed in /var/lib/k0s/manifests
+      '';
+      type = str;
+      default = "";
     };
+      
   };
 }

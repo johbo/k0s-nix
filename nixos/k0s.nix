@@ -92,16 +92,12 @@ in {
     mkIf cfg.enable {
       environment.etc = {
         "k0s/k0s.yaml".source = configFile;
-      } // 
-      builtins.listToAttrs (map (manifest: {
-        manifest.name = {
-          text = manifest.text;
-        };
-      })) cfg.spec.extensions.manifests;
-      
+        "k0s/manifests.yaml".text = cfg.spec.extensions.manifest;
+      };
+
       systemd.tmpfiles.rules = [
         "d /var/lib/k0s/manifests 0755 k0s k0s -"
-        "L /var/lib/k0s/manifests - - - - /etc/k0s/manifests"
+        "L /var/lib/k0s/manifests/manifest.yaml - - - - /etc/k0s/manifest.yaml"
       ];
 
       ## END MANIFESTS
