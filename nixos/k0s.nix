@@ -92,6 +92,13 @@ in {
     mkIf cfg.enable {
       environment.etc."k0s/k0s.yaml".source = configFile;
 
+      environment.etc = mapAttrs' (idx: manifest: {
+        "${manifest.name}" = {
+          text = manifest.yaml;
+          mode = "0644";
+        };
+      }) cfg.spec.extensions.manifests;
+
       systemd.tmpfiles.rules = [
         "d /var/lib/k0s/manifests 0755 k0s k0s -"
         "L /var/lib/k0s/manifests - - - - /etc/k0s/manifests"
