@@ -79,6 +79,11 @@ in {
               description = "The name of the chart to install. Required.";
               type = addCheck str (s: s != "");
             };
+            values = mkOption {
+              description = "The YAML values to pass for the helm chart installation";
+              type = str;
+              default = "";
+            };
             version = mkOption {
               description = "The version of the chart to install. Leaving this empty defaults to the latest.";
               type = str;
