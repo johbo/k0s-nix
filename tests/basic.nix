@@ -1,24 +1,24 @@
 {
   name = "basic";
   nodes = {
-    node1 = { self, pkgs, ... }: {
-      imports = [ self.nixosModules.default ];
-
-      # runNixOSTest makes nixpkgs.* readonly, so we can't use this:
-      # nixpkgs.overlays = [ self.overlays.default ];
-
+    node1 = { config, ... }: {
       services.k0s = {
         enable = true;
-        package = (pkgs.extend self.overlays.default).k0s;
+        role = "single";
         spec.api = {
-          address = "192.0.2.1";
-          sans = [ "192.0.2.1" ];
+          address = config.networking.primaryIPAddress;
+          sans = [ config.networking.primaryIPAddress ];
         };
       };
+
     };
   };
-  testScript = ''
-    start_all()
-    node1.wait_for_unit("k0scontroller")
-  '';
+  testScript = { nodes }:
+    let k0s = nodes.node1.services.k0s.package;
+    in ''
+      start_all()
+      node1.wait_for_unit("k0scontroller")
+      node1.wait_for_file("/run/k0s/status.sock")
+      node1.succeed("${k0s}/bin/k0s status")
+    '';
 }
