@@ -76,6 +76,7 @@ in {
       if (cfg.role == "worker")
       then "worker"
       else "controller";
+    requireJoinToken = cfg.role == "worker" || (cfg.role == "controller" && !cfg.isLeader);
     unitName = "k0s" + subcommand;
     configFile =
       if cfg.configText != ""
@@ -118,9 +119,9 @@ in {
             + optionalString (cfg.role != "worker") " --config=${configFile}"
             + optionalString (cfg.role == "single") " --single"
             + optionalString (cfg.role == "controller+worker") " --enable-worker --no-taints"
-            + optionalString (cfg.role != "single" && !cfg.isLeader) " --token-file=${cfg.tokenFile}";
+            + optionalString requireJoinToken " --token-file=${cfg.tokenFile}";
         };
-        unitConfig = mkIf (cfg.role != "single" && !cfg.isLeader) {
+        unitConfig = mkIf requireJoinToken {
           ConditionPathExists = cfg.tokenFile;
         };
       };
