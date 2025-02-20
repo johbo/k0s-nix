@@ -25,17 +25,18 @@
       nixosModules.default = import ./nixos/k0s.nix;
 
       checks = forAllSystems (system:
-        let pkgs = nixpkgs.legacyPackages.${system};
-        in {
-          basic = pkgs.testers.runNixOSTest {
-            imports = [ ./tests/basic.nix ];
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+          forAllTests = lib.genAttrs [ "single" "ctrl-wrkr" ];
+        in forAllTests (test:
+          pkgs.testers.runNixOSTest {
+            imports = [ ./tests/${test}.nix ];
             node = { pkgsReadOnly = false; };
             defaults = {
               imports = [ self.nixosModules.default ];
               nixpkgs.overlays = [ self.overlays.default ];
             };
-          };
-        });
+          }));
 
     };
 }
