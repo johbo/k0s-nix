@@ -27,7 +27,8 @@
       checks = forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          forAllTests = lib.genAttrs [ "single" "ctrl-wrkr" ];
+          forAllTests =
+            lib.genAttrs [ "single" "ctrl-wrkr" "graceful-shutdown" ];
         in forAllTests (test:
           pkgs.testers.runNixOSTest {
             imports = [ ./tests/${test}.nix ];
