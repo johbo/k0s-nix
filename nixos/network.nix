@@ -58,29 +58,37 @@ in {
       default = {};
     });
 
-    dualStack = optionalAttrs (config.provider == "calico" && config.calico.mode == "bird") {
-      enabled = mkEnableOption "Defines whether or not IPv4/IPv6 dual-stack networking should be enabled.";
-
-      IPv6podCIDR = util.mkOptionMandatoryIf config.dualStack.enabled {
-        description = ''
-          IPv6 Pod network CIDR to use in the cluster.
+    dualStack =
+      optionalAttrs (
+        config.provider
+        == "kuberouter"
+        || (config.provider == "calico" && config.calico.mode == "bird")
+      ) {
+        enabled = mkEnableOption ''
+          Defines whether or not IPv4/IPv6 dual-stack networking should be enabled.
+          With Calico, dual stack only works in bird mode.
         '';
-        type =
-          if config.dualStack.enabled
-          then customTypes.cidrV6
-          else str;
-      } "";
 
-      IPv6serviceCIDR = util.mkOptionMandatoryIf config.dualStack.enabled {
-        description = ''
-          IPv6 Network CIDR to use for cluster VIP services.
-        '';
-        type =
-          if config.dualStack.enabled
-          then customTypes.cidrV6
-          else str;
-      } "";
-    };
+        IPv6podCIDR = util.mkOptionMandatoryIf config.dualStack.enabled {
+          description = ''
+            IPv6 Pod network CIDR to use in the cluster.
+          '';
+          type =
+            if config.dualStack.enabled
+            then customTypes.cidrV6
+            else str;
+        } "";
+
+        IPv6serviceCIDR = util.mkOptionMandatoryIf config.dualStack.enabled {
+          description = ''
+            IPv6 Network CIDR to use for cluster VIP services.
+          '';
+          type =
+            if config.dualStack.enabled
+            then customTypes.cidrV6
+            else str;
+        } "";
+      };
 
     kubeProxy = mkOption {
       description = "Defines the configuration for kube-proxy.";
