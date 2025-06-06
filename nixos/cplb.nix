@@ -2,11 +2,20 @@
   lib,
   config,
   ...
-} @ args: let
+}@args:
+let
   inherit (lib) mkEnableOption mkOption optionalAttrs;
-  inherit (lib.types) str enum listOf ints submodule addCheck;
+  inherit (lib.types)
+    str
+    enum
+    listOf
+    ints
+    submodule
+    addCheck
+    ;
   customTypes = import ./types.nix args;
-in {
+in
+{
   options = {
     enabled = mkEnableOption "Indicates if control plane load balancing should be enabled. Default: `false`.";
 
@@ -15,7 +24,7 @@ in {
         The type of the control plane load balancer to deploy on controller nodes.
         Currently, the only supported type is `Keepalived`.
       '';
-      type = enum ["Keepalived"];
+      type = enum [ "Keepalived" ];
       default = "Keepalived";
     };
 
@@ -70,11 +79,17 @@ in {
                     feature but a way to prevent accidental misconfigurations.
                     AuthPass must be 8 characters or less.
                   '';
-                  type = addCheck str (s: let len = builtins.stringLength s; in len >= 1 && len <= 8);
+                  type = addCheck str (
+                    s:
+                    let
+                      len = builtins.stringLength s;
+                    in
+                    len >= 1 && len <= 8
+                  );
                 };
               };
             });
-            default = [];
+            default = [ ];
           };
 
           virtualServers = mkOption {
@@ -105,7 +120,17 @@ in {
                     Valid values are `rr`, `wrr`, `lc`, `wlc`, `lblc`, `dh`, `sh`, `sed`, `nq`. For further
                     details refer to [keepalived documentation](https://keepalived-pqa.readthedocs.io/en/stable/scheduling_algorithms.html).
                   '';
-                  type = enum ["rr" "wrr" "lc" "wlc" "lblc" "dh" "sh" "sed" "nq"];
+                  type = enum [
+                    "rr"
+                    "wrr"
+                    "lc"
+                    "wlc"
+                    "lblc"
+                    "dh"
+                    "sh"
+                    "sed"
+                    "nq"
+                  ];
                   default = "rr";
                 };
                 lbKind = mkOption {
@@ -114,7 +139,11 @@ in {
                     Valid values are `NAT` `DR` `TUN`. For further details refer to
                     [keepalived documentation](https://keepalived-pqa.readthedocs.io/en/stable/load_balancing_techniques.html).
                   '';
-                  type = enum ["NAT" "DR" "TUN"];
+                  type = enum [
+                    "NAT"
+                    "DR"
+                    "TUN"
+                  ];
                   default = "DR";
                 };
                 persistenceTimeoutSeconds = mkOption {
@@ -128,11 +157,11 @@ in {
                 };
               };
             });
-            default = [];
+            default = [ ];
           };
         };
       };
-      default = {};
+      default = { };
     });
   };
 }

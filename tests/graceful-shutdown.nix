@@ -1,30 +1,37 @@
 {
   name = "basic";
   nodes = {
-    node1 = { config, ... }: {
-      services.k0s = {
-        enable = true;
-        role = "single";
-        spec = {
-          api = {
-            address = config.networking.primaryIPAddress;
-            sans = [ config.networking.primaryIPAddress ];
-          };
-          workerProfiles = [{
-            name = "default";
-            values = {
-              shutdownGracePeriod = "30s";
-              shutdownGracePeriodCriticalPods = "10s";
+    node1 =
+      { config, ... }:
+      {
+        services.k0s = {
+          enable = true;
+          role = "single";
+          spec = {
+            api = {
+              address = config.networking.primaryIPAddress;
+              sans = [ config.networking.primaryIPAddress ];
             };
-          }];
+            workerProfiles = [
+              {
+                name = "default";
+                values = {
+                  shutdownGracePeriod = "30s";
+                  shutdownGracePeriodCriticalPods = "10s";
+                };
+              }
+            ];
+          };
         };
-      };
 
-    };
+      };
   };
-  testScript = { nodes }:
-    let k0s = nodes.node1.services.k0s.package;
-    in ''
+  testScript =
+    { nodes }:
+    let
+      k0s = nodes.node1.services.k0s.package;
+    in
+    ''
       start_all()
       node1.wait_for_unit("k0scontroller")
       node1.wait_for_file("/run/k0s/status.sock")

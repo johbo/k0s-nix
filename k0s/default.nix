@@ -1,10 +1,11 @@
-{ lib
-, stdenv
-, pkgs
-, buildPackages
-, fetchurl
-, installShellFiles
-, testers
+{
+  lib,
+  stdenv,
+  pkgs,
+  buildPackages,
+  fetchurl,
+  installShellFiles,
+  testers,
 }:
 let
   releases = {
@@ -15,14 +16,20 @@ let
     k0s_1_32 = import ./1_32.nix;
   };
 in
-builtins.mapAttrs
-  (name: release: stdenv.mkDerivation rec {
+builtins.mapAttrs (
+  name: release:
+  stdenv.mkDerivation rec {
     pname = "k0s";
     inherit (release) version;
 
     src = fetchurl {
-      inherit (release.srcs."${stdenv.hostPlatform.system}" or (throw "Missing source for host system: ${stdenv.hostPlatform.system}"))
-        url hash;
+      inherit
+        (release.srcs."${stdenv.hostPlatform.system}"
+          or (throw "Missing source for host system: ${stdenv.hostPlatform.system}")
+        )
+        url
+        hash
+        ;
     };
 
     nativeBuildInputs = [ installShellFiles ];
@@ -31,7 +38,11 @@ builtins.mapAttrs
 
     installPhase =
       let
-        k0s = if stdenv.buildPlatform.canExecute stdenv.hostPlatform then placeholder "out" else buildPackages."${name}";
+        k0s =
+          if stdenv.buildPlatform.canExecute stdenv.hostPlatform then
+            placeholder "out"
+          else
+            buildPackages."${name}";
       in
       ''
         install -m 755 -D -- "$src" "$out"/bin/k0s
@@ -60,5 +71,5 @@ builtins.mapAttrs
       maintainers = with maintainers; [ twz123 ];
       platforms = builtins.attrNames release.srcs;
     };
-  })
-  releases
+  }
+) releases

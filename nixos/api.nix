@@ -1,9 +1,16 @@
-{lib, ...} @ args: let
+{ lib, ... }@args:
+let
   inherit (lib) mkOption;
-  inherit (lib.types) listOf port either enum;
+  inherit (lib.types)
+    listOf
+    port
+    either
+    enum
+    ;
   util = import ./util.nix args;
   customTypes = import ./types.nix args;
-in {
+in
+{
   options = {
     address = mkOption {
       description = ''
@@ -20,7 +27,7 @@ in {
         Configures all cluster components to connect to this address and also configures
         this address for use when joining new nodes to the cluster.
       '';
-      type = either (enum [""]) customTypes.ipOrDnsName;
+      type = either (enum [ "" ]) customTypes.ipOrDnsName;
       default = "";
     };
 
