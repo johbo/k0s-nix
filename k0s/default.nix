@@ -6,6 +6,8 @@
   fetchurl,
   installShellFiles,
   testers,
+  makeWrapper,
+  util-linuxMinimal,
 }:
 let
   releases = {
@@ -15,6 +17,10 @@ let
     k0s_1_31 = import ./1_31.nix;
     k0s_1_32 = import ./1_32.nix;
   };
+  k0sRuntimeDeps = [
+    # This may be removed once https://github.com/NixOS/nixpkgs/issues/409339 is done.
+    util-linuxMinimal.withPatches
+  ];
 in
 builtins.mapAttrs (
   name: release:
@@ -32,7 +38,10 @@ builtins.mapAttrs (
         ;
     };
 
-    nativeBuildInputs = [ installShellFiles ];
+    nativeBuildInputs = [
+      installShellFiles
+      makeWrapper
+    ];
 
     phases = [ "installPhase" ];
 
@@ -46,6 +55,10 @@ builtins.mapAttrs (
       in
       ''
         install -m 755 -D -- "$src" "$out"/bin/k0s
+
+        wrapProgram $out/bin/k0s \
+          --prefix PATH : ${lib.makeBinPath k0sRuntimeDeps} \
+          --prefix PATH : "$out/bin"
 
         # Generate shell completions
         installShellCompletion --cmd k0s \
