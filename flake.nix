@@ -1,7 +1,7 @@
 {
   description = "k0s - The Zero Friction Kubernetes for NixOS";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
 
   outputs = { self, nixpkgs, ... }:
     let
@@ -13,10 +13,12 @@
       };
 
       lib = nixpkgs.lib;
-      allSystems = [ "armv7l-linux" "aarch64-linux" "x86_64-linux" ];
-      forAllSystems = lib.genAttrs allSystems;
+      k0sSystems = [ "armv7l-linux" "aarch64-linux" "x86_64-linux" ];
+      darwinSystems = [ "aarch64-darwin" "x86_64-darwin" ];
+      allSystems = k0sSystems ++ darwinSystems;
+      forAllK0sSystems = lib.genAttrs k0sSystems;
     in {
-      packages = forAllSystems (system:
+      packages = forAllK0sSystems (system:
         let pkgs = nixpkgs.legacyPackages.${system};
         in genPackages pkgs);
 
@@ -24,7 +26,10 @@
 
       nixosModules.default = import ./nixos/k0s.nix;
 
-      checks = forAllSystems (system:
+      formatter = (lib.genAttrs allSystems)
+        (system: nixpkgs.legacyPackages.${system}.nixfmt-tree);
+
+      checks = forAllK0sSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
           forAllTests =
