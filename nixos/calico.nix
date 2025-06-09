@@ -12,6 +12,7 @@ let
     port
     ints
     addCheck
+    bool
     ;
   util = import ./util.nix args;
 in
@@ -39,6 +40,16 @@ in
         "Never"
       ]) (v: config.mode == "vxlan" || v != "Never");
       default = "Always";
+    };
+
+    hostNetwork = mkOption {
+      description = ''
+        Whether to run calico-node pods in host-network mode.
+        Setting this to `true` is the standard configuration and is required
+        to prevent CNI initialization deadlocks on some systems.
+      '';
+      type = bool;
+      default = true; # Default to `true` as it's the recommended and safest setting.
     };
 
     vxlanPort = mkOption {
