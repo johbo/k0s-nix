@@ -1,5 +1,5 @@
-rec {
-  version = "v1.30.1+k0s.0";
+{
+  version = "1.30.1+k0s.0";
   srcs = {
     armv7l-linux = {
       url = "https://github.com/k0sproject/k0s/releases/download/v1.30.1+k0s.0/k0s-v1.30.1+k0s.0-arm";
