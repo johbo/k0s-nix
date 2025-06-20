@@ -6,6 +6,10 @@ on:
     # Every Sunday at 00:00 UTC
     - cron: '0 0 * * 0'
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   k0s-version-matrix:
     runs-on: ubuntu-latest
