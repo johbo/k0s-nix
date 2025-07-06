@@ -19,8 +19,7 @@ let
     k0s_1_33 = import ./1_33.nix;
   };
   k0sRuntimeDeps = [
-    # This may be removed once https://github.com/NixOS/nixpkgs/issues/409339 is done.
-    util-linuxMinimal.withPatches
+    util-linuxMinimal
   ];
 in
 builtins.mapAttrs (
