@@ -1,38 +1,64 @@
-{ lib
-, stdenv
-, pkgs
-, buildPackages
-, fetchurl
-, installShellFiles
-, testers
+{
+  lib,
+  stdenv,
+  pkgs,
+  buildPackages,
+  fetchurl,
+  installShellFiles,
+  testers,
+  makeWrapper,
+  util-linuxMinimal,
 }:
 let
   releases = {
     k0s_1_27 = import ./1_27.nix;
     k0s_1_28 = import ./1_28.nix;
     k0s_1_30 = import ./1_30.nix;
+    k0s_1_31 = import ./1_31.nix;
+    k0s_1_32 = import ./1_32.nix;
+    k0s_1_33 = import ./1_33.nix;
   };
+  k0sRuntimeDeps = [
+    util-linuxMinimal
+  ];
 in
-builtins.mapAttrs
-  (name: release: stdenv.mkDerivation rec {
+builtins.mapAttrs (
+  name: release:
+  stdenv.mkDerivation rec {
     pname = "k0s";
     inherit (release) version;
 
     src = fetchurl {
-      inherit (release.srcs."${stdenv.hostPlatform.system}" or (throw "Missing source for host system: ${stdenv.hostPlatform.system}"))
-        url hash;
+      inherit
+        (release.srcs."${stdenv.hostPlatform.system}"
+          or (throw "Missing source for host system: ${stdenv.hostPlatform.system}")
+        )
+        url
+        hash
+        ;
     };
 
-    nativeBuildInputs = [ installShellFiles ];
+    nativeBuildInputs = [
+      installShellFiles
+      makeWrapper
+    ];
 
     phases = [ "installPhase" ];
 
     installPhase =
       let
-        k0s = if stdenv.buildPlatform.canExecute stdenv.hostPlatform then placeholder "out" else buildPackages."${name}";
+        k0s =
+          if stdenv.buildPlatform.canExecute stdenv.hostPlatform then
+            placeholder "out"
+          else
+            buildPackages."${name}";
       in
       ''
         install -m 755 -D -- "$src" "$out"/bin/k0s
+
+        wrapProgram $out/bin/k0s \
+          --prefix PATH : ${lib.makeBinPath k0sRuntimeDeps} \
+          --prefix PATH : "$out/bin"
 
         # Generate shell completions
         installShellCompletion --cmd k0s \
@@ -58,5 +84,5 @@ builtins.mapAttrs
       maintainers = with maintainers; [ twz123 ];
       platforms = builtins.attrNames release.srcs;
     };
-  })
-  releases
+  }
+) releases

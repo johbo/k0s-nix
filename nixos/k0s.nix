@@ -3,21 +3,41 @@
   lib,
   config,
   ...
-}: let
-  inherit (lib) mkEnableOption mkPackageOption mkOption mkIf optionalString concatMapAttrs;
-  inherit (lib.types) str enum bool path submodule;
+}:
+let
+  inherit (lib)
+    mkEnableOption
+    mkPackageOption
+    mkOption
+    mkIf
+    optionalString
+    concatMapAttrs
+    ;
+  inherit (lib.types)
+    str
+    enum
+    bool
+    path
+    submodule
+    ;
   cfg = config.services.k0s;
-in {
+in
+{
   options.services.k0s = {
     enable = mkEnableOption (lib.mdDoc "Enable the k0s Kubernetes distribution.");
 
-    package = mkPackageOption pkgs "k0s" {};
+    package = mkPackageOption pkgs "k0s" { };
 
     role = mkOption {
       description = ''
         The role of the node.
       '';
-      type = enum ["controller" "controller+worker" "worker" "single"];
+      type = enum [
+        "controller"
+        "controller+worker"
+        "worker"
+        "single"
+      ];
       default = "single";
     };
 
@@ -57,8 +77,8 @@ in {
       description = ''
         Defines the desired state of the cluster config.
       '';
-      type = submodule (a: (import ./clusterSpec.nix (a // {inherit (cfg) dataDir;})));
-      default = {};
+      type = submodule (a: (import ./clusterSpec.nix (a // { inherit (cfg) dataDir; })));
+      default = { };
     };
 
     configText = mkOption {
@@ -80,23 +100,24 @@ in {
 
   };
 
-  config = let
-    subcommand =
-      if (cfg.role == "worker")
-      then "worker"
-      else "controller";
-    unitName = "k0s" + subcommand;
-    configFile =
-      if cfg.configText != ""
-      then pkgs.writeText "k0s.yaml" cfg.configText
-      else
-        (pkgs.formats.yaml {}).generate "k0s.yaml" {
-          apiVersion = "k0s.k0sproject.io/v1beta1";
-          kind = "Cluster";
-          metadata = {name = cfg.clusterName;};
-          spec = cfg.spec;
-        };
-  in
+  config =
+    let
+      subcommand = if (cfg.role == "worker") then "worker" else "controller";
+      requireJoinToken = cfg.role == "worker" || (cfg.role == "controller" && !cfg.isLeader);
+      unitName = "k0s" + subcommand;
+      configFile =
+        if cfg.configText != "" then
+          pkgs.writeText "k0s.yaml" cfg.configText
+        else
+          (pkgs.formats.yaml { }).generate "k0s.yaml" {
+            apiVersion = "k0s.k0sproject.io/v1beta1";
+            kind = "Cluster";
+            metadata = {
+              name = cfg.clusterName;
+            };
+            spec = cfg.spec;
+          };
+    in
     mkIf cfg.enable {
       environment.etc = {
         "k0s/k0s.yaml".source = configFile;
@@ -112,15 +133,15 @@ in {
 
       systemd.services.${unitName} = {
         description = "k0s - Zero Friction Kubernetes";
-        documentation = ["https://docs.k0sproject.io"];
+        documentation = [ "https://docs.k0sproject.io" ];
         path = with pkgs; [
           kmod
           util-linux
           mount
         ];
-        after = ["network-online.target"];
-        wants = ["network-online.target"];
-        wantedBy = ["multi-user.target"];
+        after = [ "network-online.target" ];
+        wants = [ "network-online.target" ];
+        wantedBy = [ "multi-user.target" ];
         startLimitIntervalSec = 5;
         startLimitBurst = 10;
         serviceConfig = {
@@ -137,22 +158,19 @@ in {
             + optionalString (cfg.role != "worker") " --config=${configFile}"
             + optionalString (cfg.role == "single") " --single"
             + optionalString (cfg.role == "controller+worker") " --enable-worker --no-taints"
-            + optionalString (cfg.role != "single" && !cfg.isLeader) " --token-file=${cfg.tokenFile}";
+            + optionalString requireJoinToken " --token-file=${cfg.tokenFile}";
         };
-        unitConfig = mkIf (cfg.role != "single" && !cfg.isLeader) {
+        unitConfig = mkIf requireJoinToken {
           ConditionPathExists = cfg.tokenFile;
         };
       };
 
-      users.users =
-        concatMapAttrs
-        (name: value: {
-          ${value} = {
-            isSystemUser = true;
-            group = "users";
-            home = "${cfg.dataDir}";
-          };
-        })
-        cfg.spec.installConfig.users;
+      users.users = concatMapAttrs (name: value: {
+        ${value} = {
+          isSystemUser = true;
+          group = "users";
+          home = "${cfg.dataDir}";
+        };
+      }) cfg.spec.installConfig.users;
     };
 }

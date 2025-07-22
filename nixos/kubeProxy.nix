@@ -1,8 +1,19 @@
-{lib, ...} @ args: let
+{ lib, ... }@args:
+let
   inherit (lib) mkEnableOption mkOption;
-  inherit (lib.types) str enum bool nullOr attrsOf listOf attrTag int;
+  inherit (lib.types)
+    str
+    enum
+    bool
+    nullOr
+    attrsOf
+    listOf
+    attrTag
+    int
+    ;
   customTypes = import ./types.nix args;
-in {
+in
+{
   options = {
     disabled = mkEnableOption ''
       Disable kube-proxy altogether (default: `false`).
@@ -12,7 +23,11 @@ in {
       description = ''
         Kube proxy operating mode, supported modes iptables, ipvs, userspace (default: iptables).
       '';
-      type = enum ["iptables" "ipvs" "userspace"];
+      type = enum [
+        "iptables"
+        "ipvs"
+        "userspace"
+      ];
       default = "iptables";
     };
 
@@ -28,23 +43,25 @@ in {
       description = ''
         Kube proxy iptables settings.
       '';
-      type = nullOr (attrsOf (attrTag {
-        masqueradeBit = mkOption {
-          type = nullOr int;
-        };
-        masqueradeAll = mkOption {
-          type = bool;
-        };
-        localhostNodePorts = mkOption {
-          type = nullOr bool;
-        };
-        syncPeriod = mkOption {
-          type = str;
-        };
-        minSyncPeriod = mkOption {
-          type = str;
-        };
-      }));
+      type = nullOr (
+        attrsOf (attrTag {
+          masqueradeBit = mkOption {
+            type = nullOr int;
+          };
+          masqueradeAll = mkOption {
+            type = bool;
+          };
+          localhostNodePorts = mkOption {
+            type = nullOr bool;
+          };
+          syncPeriod = mkOption {
+            type = str;
+          };
+          minSyncPeriod = mkOption {
+            type = str;
+          };
+        })
+      );
       default = null;
     };
 
@@ -52,32 +69,34 @@ in {
       description = ''
         Kube proxy ipvs settings.
       '';
-      type = nullOr (attrsOf (attrTag {
-        syncPeriod = mkOption {
-          type = str;
-        };
-        minSyncPeriod = mkOption {
-          type = str;
-        };
-        scheduler = mkOption {
-          type = str;
-        };
-        excludedCIDRs = mkOption {
-          type = nullOr (listOf customTypes.cidr);
-        };
-        strictARP = mkOption {
-          type = bool;
-        };
-        tcpTimeout = mkOption {
-          type = str;
-        };
-        tcpFinTimeout = mkOption {
-          type = str;
-        };
-        udpTimeout = mkOption {
-          type = str;
-        };
-      }));
+      type = nullOr (
+        attrsOf (attrTag {
+          syncPeriod = mkOption {
+            type = str;
+          };
+          minSyncPeriod = mkOption {
+            type = str;
+          };
+          scheduler = mkOption {
+            type = str;
+          };
+          excludedCIDRs = mkOption {
+            type = nullOr (listOf customTypes.cidr);
+          };
+          strictARP = mkOption {
+            type = bool;
+          };
+          tcpTimeout = mkOption {
+            type = str;
+          };
+          tcpFinTimeout = mkOption {
+            type = str;
+          };
+          udpTimeout = mkOption {
+            type = str;
+          };
+        })
+      );
       default = null;
     };
 

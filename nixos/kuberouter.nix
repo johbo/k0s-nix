@@ -2,11 +2,18 @@
   lib,
   config,
   ...
-} @ args: let
+}@args:
+let
   inherit (lib) mkOption mkEnableOption;
-  inherit (lib.types) enum bool port ints;
+  inherit (lib.types)
+    enum
+    bool
+    port
+    ints
+    ;
   util = import ./util.nix args;
-in {
+in
+{
   options = {
     autoMTU = mkOption {
       description = ''
@@ -16,14 +23,12 @@ in {
       default = true;
     };
 
-    mtu =
-      util.mkOptionMandatoryIf (!config.autoMTU) {
-        description = ''
-          Override MTU setting, if `autoMTU` must be set to `false`).
-        '';
-        type = ints.unsigned;
-      }
-      0;
+    mtu = util.mkOptionMandatoryIf (!config.autoMTU) {
+      description = ''
+        Override MTU setting, if `autoMTU` must be set to `false`).
+      '';
+      type = ints.unsigned;
+    } 0;
 
     metricsPort = mkOption {
       description = ''
@@ -41,7 +46,11 @@ in {
         - `Disabled`: doesn't work at all
         (default: `Enabled`)
       '';
-      type = enum ["Enabled" "Allowed" "Disabled"];
+      type = enum [
+        "Enabled"
+        "Allowed"
+        "Disabled"
+      ];
       default = "Enabled";
     };
 

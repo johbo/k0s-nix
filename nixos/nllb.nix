@@ -2,11 +2,18 @@
   lib,
   config,
   ...
-} @ args: let
+}@args:
+let
   inherit (lib) mkEnableOption mkOption optionalAttrs;
-  inherit (lib.types) enum port submodule nullOr;
+  inherit (lib.types)
+    enum
+    port
+    submodule
+    nullOr
+    ;
   customTypes = import ./types.nix args;
-in {
+in
+{
   options = {
     enabled = mkEnableOption "Indicates if node-local load balancing should be used to access Kubernetes API servers from worker nodes. Default: `false`.";
 
@@ -15,7 +22,7 @@ in {
         The type of the node-local load balancer to deploy on worker nodes.
         Default: `EnvoyProxy`. (This is the only option for now.)
       '';
-      type = enum ["EnvoyProxy"];
+      type = enum [ "EnvoyProxy" ];
       default = "EnvoyProxy";
     };
 
@@ -32,7 +39,12 @@ in {
           };
           imagePullPolicy = mkOption {
             description = "Pull policy to use when pulling the envoy proxy image. k0s sets its default if empty.";
-            type = enum ["Always" "Never" "IfNotPresent" ""];
+            type = enum [
+              "Always"
+              "Never"
+              "IfNotPresent"
+              ""
+            ];
             default = "";
           };
           apiServerBindPort = mkOption {
@@ -45,7 +57,7 @@ in {
           };
         };
       };
-      default = {};
+      default = { };
     });
   };
 }

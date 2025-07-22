@@ -1,12 +1,26 @@
-{lib, ...} @ args: let
+{ lib, ... }@args:
+let
   inherit (lib) mkOption;
-  inherit (lib.types) nullOr int str enum bool listOf addCheck submodule;
+  inherit (lib.types)
+    nullOr
+    int
+    str
+    enum
+    bool
+    listOf
+    addCheck
+    submodule
+    ;
   customTypes = import ./types.nix args;
-in {
+in
+{
   options = {
     storage = {
       type = mkOption {
-        type = enum ["external_storage" "openebs_local_storage"];
+        type = enum [
+          "external_storage"
+          "openebs_local_storage"
+        ];
         default = "external_storage";
       };
 
@@ -65,7 +79,7 @@ in {
             };
           };
         });
-        default = [];
+        default = [ ];
       };
 
       charts = mkOption {
@@ -78,6 +92,11 @@ in {
             chartname = mkOption {
               description = "The name of the chart to install. Required.";
               type = addCheck str (s: s != "");
+            };
+            values = mkOption {
+              description = "The YAML values to pass for the helm chart installation";
+              type = str;
+              default = "";
             };
             version = mkOption {
               description = "The version of the chart to install. Leaving this empty defaults to the latest.";
@@ -104,7 +123,7 @@ in {
             };
           };
         });
-        default = [];
+        default = [ ];
       };
     };
   };

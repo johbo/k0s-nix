@@ -3,19 +3,31 @@
   config,
   dataDir,
   ...
-} @ args: let
+}@args:
+let
   inherit (lib) mkOption optionalAttrs;
-  inherit (lib.types) str enum nullOr listOf submodule addCheck;
+  inherit (lib.types)
+    str
+    enum
+    nullOr
+    listOf
+    submodule
+    addCheck
+    ;
   util = import ./util.nix args;
   customTypes = import ./types.nix args;
-in {
+in
+{
   options = {
     type = mkOption {
       description = ''
         Type of the data store (valid values: `etcd` or `kine`).
         **Note:** Type `etcd` will cause k0s to create and manage an elastic etcd cluster within the controller nodes.
       '';
-      type = enum ["etcd" "kine"];
+      type = enum [
+        "etcd"
+        "kine"
+      ];
       default = "etcd";
     };
 

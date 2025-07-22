@@ -2,17 +2,30 @@
   lib,
   config,
   ...
-} @ args: let
+}@args:
+let
   inherit (lib) mkEnableOption mkOption;
-  inherit (lib.types) str enum path port ints addCheck;
+  inherit (lib.types)
+    str
+    enum
+    path
+    port
+    ints
+    addCheck
+    ;
   util = import ./util.nix args;
-in {
+in
+{
   options = {
     mode = mkOption {
       description = ''
         `vxlan` (default), `ipip` or `bird`
       '';
-      type = enum ["vxlan" "ipip" "bird"];
+      type = enum [
+        "vxlan"
+        "ipip"
+        "bird"
+      ];
       default = "vxlan";
     };
 
@@ -20,7 +33,11 @@ in {
       description = ''
         Overlay mode: `Always` (default), `CrossSubnet` or `Never` (requires `mode=vxlan` to disable calico overlay-network).
       '';
-      type = addCheck (enum ["Always" "CrossSubnet" "Never"]) (v: config.mode == "vxlan" || v != "Never");
+      type = addCheck (enum [
+        "Always"
+        "CrossSubnet"
+        "Never"
+      ]) (v: config.mode == "vxlan" || v != "Never");
       default = "Always";
     };
 
