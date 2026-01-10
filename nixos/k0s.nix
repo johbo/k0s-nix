@@ -89,12 +89,20 @@ in
       default = "";
       type = str;
     };
+
+    extraArgs = mkOption {
+      description = ''
+        Extra arguments to pass to systemd ExecStart
+      '';
+      default = "";
+      type = str;
+    };
   };
 
   config =
     let
       subcommand = if (cfg.role == "worker") then "worker" else "controller";
-      requireJoinToken = cfg.role == "worker" || (cfg.role == "controller" && !cfg.isLeader);
+      requireJoinToken = subcommand == "worker" || (subcommand == "controller" && !cfg.isLeader);
       unitName = "k0s" + subcommand;
       configFile =
         if cfg.configText != "" then
@@ -106,7 +114,7 @@ in
             metadata = {
               name = cfg.clusterName;
             };
-            spec = cfg.spec;
+            inherit (cfg) spec;
           };
     in
     mkIf cfg.enable {
@@ -139,11 +147,10 @@ in
             + optionalString (cfg.role != "worker") " --config=${configFile}"
             + optionalString (cfg.role == "single") " --single"
             + optionalString (cfg.role == "controller+worker") " --enable-worker --no-taints"
-            + optionalString requireJoinToken " --token-file=${cfg.tokenFile}";
+            + optionalString requireJoinToken " --token-file=${cfg.tokenFile}"
+            + " ${cfg.extraArgs}";
         };
-        unitConfig = mkIf requireJoinToken {
-          ConditionPathExists = cfg.tokenFile;
-        };
+        unitConfig = mkIf requireJoinToken { ConditionPathExists = cfg.tokenFile; };
       };
 
       users.users = concatMapAttrs (name: value: {
