@@ -102,7 +102,7 @@ in
   config =
     let
       subcommand = if (cfg.role == "worker") then "worker" else "controller";
-      requireJoinToken = cfg.role == "worker" || (cfg.role == "controller" && !cfg.isLeader);
+      requireJoinToken = subcommand == "worker" || (subcommand == "controller" && !cfg.isLeader);
       unitName = "k0s" + subcommand;
       configFile =
         if cfg.configText != "" then
