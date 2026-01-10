@@ -148,7 +148,7 @@ in
             + optionalString (cfg.role == "single") " --single"
             + optionalString (cfg.role == "controller+worker") " --enable-worker --no-taints"
             + optionalString requireJoinToken " --token-file=${cfg.tokenFile}"
-            + " ${cfg.extraServiceArgs}";
+            + " ${cfg.extraArgs}";
         };
         unitConfig = mkIf requireJoinToken { ConditionPathExists = cfg.tokenFile; };
       };
