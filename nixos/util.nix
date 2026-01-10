@@ -5,15 +5,12 @@ let
 in
 {
   mkStringMapOption =
-    {
-      example,
-      description,
-    }:
+    { example, description }:
     (mkOption {
       type = attrsOf str;
       default = { };
       example = literalExpression example;
-      description = description;
+      inherit description;
     });
 
   mkOptionMandatoryIf =

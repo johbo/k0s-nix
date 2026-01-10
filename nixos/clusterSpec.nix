@@ -1,8 +1,4 @@
-{
-  lib,
-  dataDir,
-  ...
-}@args:
+{ lib, dataDir, ... }@args:
 let
   inherit (lib) mkEnableOption mkOption;
   inherit (lib.types)
@@ -97,9 +93,7 @@ in
 
     images =
       let
-        imageOption = mkOption {
-          type = customTypes.image;
-        };
+        imageOption = mkOption { type = customTypes.image; };
       in
       mkOption {
         type = attrsOf (attrTag {
@@ -109,15 +103,15 @@ in
           kubeproxy = imageOption;
           coredns = imageOption;
           pause = imageOption;
-          calico.cni = imageOption;
-          calico.flexvolume = imageOption;
-          calico.node = imageOption;
-          calico.kubecontrollers = imageOption;
+          calico = {
+            cni = imageOption;
+            flexvolume = imageOption;
+            node = imageOption;
+            kubecontrollers = imageOption;
+          };
           kuberouter.cni = imageOption;
           kuberouter.cniInstaller = imageOption;
-          repository = mkOption {
-            type = str;
-          };
+          repository = mkOption { type = str; };
           default_pull_policy = mkOption {
             type = enum [
               "Always"

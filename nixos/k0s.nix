@@ -89,6 +89,14 @@ in
       default = "";
       type = str;
     };
+
+    extraServiceArgs = mkOption {
+      description = ''
+        Extra arguments to pass to systemd ExecStart
+      '';
+      default = "";
+      type = str;
+    };
   };
 
   config =
@@ -106,7 +114,7 @@ in
             metadata = {
               name = cfg.clusterName;
             };
-            spec = cfg.spec;
+            inherit (cfg) spec;
           };
     in
     mkIf cfg.enable {
@@ -139,11 +147,10 @@ in
             + optionalString (cfg.role != "worker") " --config=${configFile}"
             + optionalString (cfg.role == "single") " --single"
             + optionalString (cfg.role == "controller+worker") " --enable-worker --no-taints"
-            + optionalString requireJoinToken " --token-file=${cfg.tokenFile}";
+            + optionalString requireJoinToken " --token-file=${cfg.tokenFile}"
+            + optionalString cfg.extraServiceArgs " ${cfg.extraServiceArgs}";
         };
-        unitConfig = mkIf requireJoinToken {
-          ConditionPathExists = cfg.tokenFile;
-        };
+        unitConfig = mkIf requireJoinToken { ConditionPathExists = cfg.tokenFile; };
       };
 
       users.users = concatMapAttrs (name: value: {
