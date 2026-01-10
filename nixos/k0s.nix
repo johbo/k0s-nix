@@ -90,7 +90,7 @@ in
       type = str;
     };
 
-    extraServiceArgs = mkOption {
+    extraArgs = mkOption {
       description = ''
         Extra arguments to pass to systemd ExecStart
       '';
@@ -148,7 +148,7 @@ in
             + optionalString (cfg.role == "single") " --single"
             + optionalString (cfg.role == "controller+worker") " --enable-worker --no-taints"
             + optionalString requireJoinToken " --token-file=${cfg.tokenFile}"
-            + optionalString (cfg.extraServiceArgs != "") cfg.extraServiceArgs;
+            + " ${cfg.extraServiceArgs}";
         };
         unitConfig = mkIf requireJoinToken { ConditionPathExists = cfg.tokenFile; };
       };
