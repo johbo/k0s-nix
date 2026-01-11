@@ -47,10 +47,12 @@ in
           Controller specific configuration
         '';
         type = submodule {
-          isLeader = lib.mkOption {
-            description = ''
-              The leader is used to generate the join tokens.
-            '';
+          options = {
+            isLeader = lib.mkOption {
+              description = ''
+                The leader is used to generate the join tokens.
+              '';
+            };
           };
         };
         default = { };
