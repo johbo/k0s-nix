@@ -125,9 +125,9 @@ in
       containsAny = string: searchList: builtins.any (sub: lib.strings.hasInfix sub string) searchList;
       invalid = containsAny cfg.extraArgs forbiddenArgs;
     in
-    mkIf cfg.enable
+    mkIf (cfg.enable
     &&
-      lib.assertMsg (!invalid) "extraArgs must not include ${builtins.concatStringsSep "," forbiddenArgs}"
+      (lib.assertMsg (!invalid) "extraArgs must not include ${builtins.concatStringsSep "," forbiddenArgs}"))
         {
           environment.etc."k0s/k0s.yaml".source = configFile;
 
