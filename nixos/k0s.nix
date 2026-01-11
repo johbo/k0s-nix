@@ -102,7 +102,7 @@ in
   config =
     let
       subcommand = if (cfg.role == "worker") then "worker" else "controller";
-      requireJoinToken = subcommand == "worker" || (subcommand == "controller" && !cfg.isLeader);
+      requireJoinToken = !cfg.isLeader;
       unitName = "k0s" + subcommand;
       configFile =
         if cfg.configText != "" then
@@ -116,7 +116,16 @@ in
             };
             inherit (cfg) spec;
           };
+      forbiddenArgs = [
+        "--data-dir"
+        "--config"
+        "--single"
+        "--token-file"
+      ];
+      containsAny = string: searchList: builtins.any (sub: lib.strings.hasInfix sub string) searchList;
+      valid = lib.assertMsg (containsAny cfg.extraArgs forbiddenArgs) "extraArgs must not include ${builtins.concatStringsSep "," forbiddenArgs}";
     in
+    assert valid;
     mkIf cfg.enable {
       environment.etc."k0s/k0s.yaml".source = configFile;
 
