@@ -123,9 +123,11 @@ in
         "--token-file"
       ];
       containsAny = string: searchList: builtins.any (sub: lib.strings.hasInfix sub string) searchList;
-      valid = lib.assertMsg (containsAny cfg.extraArgs forbiddenArgs) "extraArgs must not include ${builtins.concatStringsSep "," forbiddenArgs}";
+      invalid = containsAny cfg.extraArgs forbiddenArgs;
     in
-    assert valid;
+    assert lib.assertMsg (
+      !invalid
+    ) "extraArgs must not include ${builtins.concatStringsSep "," forbiddenArgs}";
     mkIf cfg.enable {
       environment.etc."k0s/k0s.yaml".source = configFile;
 
