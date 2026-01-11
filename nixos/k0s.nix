@@ -41,7 +41,7 @@ in
       default = "single";
     };
 
-    isLeader = mkOption {
+    isLeader = lib.mkIf (cfg.role == "controller" || cfg.role == "controller+worker") lib.mkOption {
       description = ''
         The leader is used to generate the join tokens.
       '';
@@ -102,7 +102,7 @@ in
   config =
     let
       subcommand = if (cfg.role == "worker") then "worker" else "controller";
-      requireJoinToken = !cfg.isLeader;
+      requireJoinToken = !(cfg.isLeader or false);
       unitName = "k0s" + subcommand;
       configFile =
         if cfg.configText != "" then
