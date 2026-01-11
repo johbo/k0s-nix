@@ -133,58 +133,58 @@ in
         "--single"
         "--token-file"
       ];
-      containsAny = string: searchList: builtins.any (substr: lib.strings.hasInfix substr string) searchList;
-      invalid = containsAny cfg.extraArgs forbiddenArgs;
+      containsAny =
+        string: searchList: builtins.any (substr: lib.strings.hasInfix substr string) searchList;
     in
-    mkIf
-      (
-        cfg.enable
-        && (lib.assertMsg (
-          !invalid
-        ) "extraArgs must not include ${builtins.concatStringsSep "," forbiddenArgs}")
-      )
-      {
-        environment.etc."k0s/k0s.yaml".source = configFile;
+    mkIf cfg.enable {
+      assertions = [
+        {
+          assertion = !(containsAny cfg.extraArgs forbiddenArgs);
+          message = "extraArgs must not include ${builtins.concatStringsSep "," forbiddenArgs}";
+        }
+      ];
 
-        systemd.services.${unitName} = {
-          description = "k0s - Zero Friction Kubernetes";
-          documentation = [ "https://docs.k0sproject.io" ];
-          path = with pkgs; [
-            kmod
-            util-linux
-            mount
-          ];
-          after = [ "network-online.target" ];
-          wants = [ "network-online.target" ];
-          wantedBy = [ "multi-user.target" ];
-          startLimitIntervalSec = 5;
-          startLimitBurst = 10;
-          serviceConfig = {
-            RestartSec = 120;
-            Delegate = "yes";
-            KillMode = "process";
-            LimitCORE = "infinity";
-            TasksMax = "infinity";
-            TimeoutStartSec = 0;
-            LimitNOFILE = 999999;
-            Restart = "always";
-            ExecStart =
-              "${cfg.package}/bin/k0s ${subcommand} --data-dir=${cfg.dataDir}"
-              + optionalString (cfg.role != "worker") " --config=${configFile}"
-              + optionalString (cfg.role == "single") " --single"
-              + optionalString (cfg.role == "controller+worker") " --enable-worker --no-taints"
-              + optionalString requireJoinToken " --token-file=${cfg.tokenFile}"
-              + " ${cfg.extraArgs}";
-          };
-          unitConfig = mkIf requireJoinToken { ConditionPathExists = cfg.tokenFile; };
+      environment.etc."k0s/k0s.yaml".source = configFile;
+
+      systemd.services.${unitName} = {
+        description = "k0s - Zero Friction Kubernetes";
+        documentation = [ "https://docs.k0sproject.io" ];
+        path = with pkgs; [
+          kmod
+          util-linux
+          mount
+        ];
+        after = [ "network-online.target" ];
+        wants = [ "network-online.target" ];
+        wantedBy = [ "multi-user.target" ];
+        startLimitIntervalSec = 5;
+        startLimitBurst = 10;
+        serviceConfig = {
+          RestartSec = 120;
+          Delegate = "yes";
+          KillMode = "process";
+          LimitCORE = "infinity";
+          TasksMax = "infinity";
+          TimeoutStartSec = 0;
+          LimitNOFILE = 999999;
+          Restart = "always";
+          ExecStart =
+            "${cfg.package}/bin/k0s ${subcommand} --data-dir=${cfg.dataDir}"
+            + optionalString (cfg.role != "worker") " --config=${configFile}"
+            + optionalString (cfg.role == "single") " --single"
+            + optionalString (cfg.role == "controller+worker") " --enable-worker --no-taints"
+            + optionalString requireJoinToken " --token-file=${cfg.tokenFile}"
+            + " ${cfg.extraArgs}";
         };
-
-        users.users = concatMapAttrs (name: value: {
-          ${value} = {
-            isSystemUser = true;
-            group = "users";
-            home = "${cfg.dataDir}";
-          };
-        }) cfg.spec.installConfig.users;
+        unitConfig = mkIf requireJoinToken { ConditionPathExists = cfg.tokenFile; };
       };
+
+      users.users = concatMapAttrs (name: value: {
+        ${value} = {
+          isSystemUser = true;
+          group = "users";
+          home = "${cfg.dataDir}";
+        };
+      }) cfg.spec.installConfig.users;
+    };
 }
