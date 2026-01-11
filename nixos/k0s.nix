@@ -52,6 +52,7 @@ in
               description = ''
                 The leader is used to generate the join tokens.
               '';
+              default = false;
             };
           };
         };
