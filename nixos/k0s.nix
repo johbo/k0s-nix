@@ -41,7 +41,7 @@ in
       default = "single";
     };
 
-    isLeader = lib.mkIf (cfg.role == "controller" || cfg.role == "controller+worker") (
+    isLeader = lib.optionalAttrs (cfg.role == "controller" || cfg.role == "controller+worker") (
       lib.mkOption {
         description = ''
           The leader is used to generate the join tokens.
