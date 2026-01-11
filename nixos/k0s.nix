@@ -41,13 +41,19 @@ in
       default = "single";
     };
 
-    isLeader = lib.optionalAttrs (cfg.role == "controller" || cfg.role == "controller+worker") (
+    controller = lib.optionalAttrs (cfg.role == "controller" || cfg.role == "controller+worker") (
       lib.mkOption {
         description = ''
-          The leader is used to generate the join tokens.
+          Controller specific configuration
         '';
-        type = bool;
-        default = false;
+        type = submodule {
+          isLeader = lib.mkOption {
+            description = ''
+              The leader is used to generate the join tokens.
+            '';
+          };
+        };
+        default = { };
       }
     );
 
@@ -104,7 +110,7 @@ in
   config =
     let
       subcommand = if (cfg.role == "worker") then "worker" else "controller";
-      requireJoinToken = cfg.role == "worker" || !(cfg.isLeader or true);
+      requireJoinToken = cfg.role == "worker" || !(cfg.controller.isLeader or true);
       unitName = "k0s" + subcommand;
       configFile =
         if cfg.configText != "" then
