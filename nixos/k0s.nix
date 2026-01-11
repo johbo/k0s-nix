@@ -133,7 +133,7 @@ in
         "--single"
         "--token-file"
       ];
-      containsAny = string: searchList: builtins.any (sub: lib.strings.hasInfix sub string) searchList;
+      containsAny = string: searchList: builtins.any (substr: lib.strings.hasInfix substr string) searchList;
       invalid = containsAny cfg.extraArgs forbiddenArgs;
     in
     mkIf
