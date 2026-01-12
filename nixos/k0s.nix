@@ -8,6 +8,7 @@ let
   inherit (lib)
     mkEnableOption
     mkPackageOption
+    mkRemovedOptionModule
     mkOption
     mkIf
     optionalString
@@ -16,13 +17,20 @@ let
   inherit (lib.types)
     str
     enum
-    bool
     path
     submodule
     ;
   cfg = config.services.k0s;
 in
 {
+  imports = [
+    (mkRemovedOptionModule [
+      "services"
+      "k0s"
+      "isLeader"
+    ] "Use services.k0s.controller.isLeader instead.")
+  ];
+
   options.services.k0s = {
     enable = mkEnableOption (lib.mdDoc "Enable the k0s Kubernetes distribution.");
 
