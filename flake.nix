@@ -52,11 +52,9 @@
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          forAllTests = lib.genAttrs [
-            "single"
-            "ctrl-wrkr"
-            "graceful-shutdown"
-          ];
+          forAllTests = lib.genAttrs (
+            map (name: lib.strings.removeSuffix ".nix" name) (builtins.attrNames (builtins.readDir ./tests))
+          );
         in
         forAllTests (
           test:
