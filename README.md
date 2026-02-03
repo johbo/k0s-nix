@@ -60,6 +60,8 @@ and internals.
 
 ## Contact
 
+- Matrix chat: <https://matrix.to/#/#k0s-nix:matrix.org>
+
 - <johannes@bornhold.name>
 
 
