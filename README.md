@@ -42,8 +42,17 @@ automation tooling.
 
 ## Known limitations
 
-- `k0s` is currently included as a binary. It would be better to replicate the
-  build process so that it would be built from sources.
+
+### `k0s` is included as a binary
+
+`k0s` is currently included as a binary. It would be better to replicate the
+build process so that it would be built from sources.
+
+The following pull requests and issues around Nixpkgs are related to this:
+
+- Attempt to add `k0s` 2026-01: https://github.com/NixOS/nixpkgs/pull/479140
+- Attempt to package the binary from 2023-10: https://github.com/NixOS/nixpkgs/pull/258846
+- Package request issue from 2023-08: https://github.com/NixOS/nixpkgs/issues/247158
 
 
 ## Development and alternatives
