@@ -54,6 +54,25 @@ The following pull requests and issues around Nixpkgs are related to this:
 - Attempt to package the binary from 2023-10: https://github.com/NixOS/nixpkgs/pull/258846
 - Package request issue from 2023-08: https://github.com/NixOS/nixpkgs/issues/247158
 
+## Releases
+
+Every commit on the `main` branch should be considered "stable" and directly usable.
+The CI process runs a small, but growing, suite of tests on every pull request before it is merged and cover common use-cases.
+
+Version upgrades to the k0s binary will occur in a relatively timely manner.
+The `k0s` nix package attribute will change minor versions from time to time (i.e.: `1.33.x -> 1.34.x`).
+
+Most users can use this flake from the its `main` branch. Users that wish to keep a more
+stable base can point at a specific commit `sha` instead of the `main` branch,
+e.g. in their `flake.nix` file, like so:
+
+```
+{
+  inputs = {
+    k0s-nix.url = "github:johbo/k0s-nix/cfdbd7ace82d6437aaa9324a53d70cf3521ef22c";
+  }
+}
+```
 
 ## Development and alternatives
 
