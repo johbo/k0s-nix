@@ -68,9 +68,10 @@ in
 
     sans = mkOption {
       description = ''
-        Required. List of additional addresses to push to API servers serving the certificate.
+        List of additional addresses to push to API servers serving the certificate.
       '';
       type = listOf customTypes.ipOrDnsName;
+      default = [ ];
     };
   };
 }
