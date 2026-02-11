@@ -48,7 +48,7 @@
 
       formatter = (lib.genAttrs allSystems) (system: nixpkgs.legacyPackages.${system}.nixfmt-tree);
 
-      checks = forAllK0sSystems (
+      checks = (lib.genAttrs allSystems) (
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
