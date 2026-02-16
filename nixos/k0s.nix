@@ -8,6 +8,7 @@ let
   inherit (lib)
     mkEnableOption
     mkPackageOption
+    mkRemovedOptionModule
     mkOption
     mkIf
     optionalString
@@ -16,13 +17,20 @@ let
   inherit (lib.types)
     str
     enum
-    bool
     path
     submodule
     ;
   cfg = config.services.k0s;
 in
 {
+  imports = [
+    (mkRemovedOptionModule [
+      "services"
+      "k0s"
+      "isLeader"
+    ] "Use services.k0s.controller.isLeader instead.")
+  ];
+
   options.services.k0s = {
     enable = mkEnableOption (lib.mdDoc "Enable the k0s Kubernetes distribution.");
 
@@ -41,13 +49,24 @@ in
       default = "single";
     };
 
-    isLeader = mkOption {
-      description = ''
-        The leader is used to generate the join tokens.
-      '';
-      type = bool;
-      default = false;
-    };
+    controller = lib.optionalAttrs (cfg.role == "controller" || cfg.role == "controller+worker") (
+      lib.mkOption {
+        description = ''
+          Controller specific configuration
+        '';
+        type = submodule {
+          options = {
+            isLeader = lib.mkOption {
+              description = ''
+                The leader is used to generate the join tokens.
+              '';
+              default = false;
+            };
+          };
+        };
+        default = { };
+      }
+    );
 
     dataDir = mkOption {
       description = ''
@@ -98,12 +117,19 @@ in
       type = str;
     };
 
+    extraArgs = mkOption {
+      description = ''
+        Extra arguments to pass to systemd ExecStart
+      '';
+      default = "";
+      type = str;
+    };
   };
 
   config =
     let
       subcommand = if (cfg.role == "worker") then "worker" else "controller";
-      requireJoinToken = cfg.role == "worker" || (cfg.role == "controller" && !cfg.isLeader);
+      requireJoinToken = cfg.role == "worker" || !(cfg.controller.isLeader or true);
       unitName = "k0s" + subcommand;
       configFile =
         if cfg.configText != "" then
@@ -115,10 +141,25 @@ in
             metadata = {
               name = cfg.clusterName;
             };
-            spec = cfg.spec;
+            inherit (cfg) spec;
           };
+      forbiddenArgs = [
+        "--data-dir"
+        "--config"
+        "--single"
+        "--token-file"
+      ];
+      containsAny =
+        string: searchList: builtins.any (substr: lib.strings.hasInfix substr string) searchList;
     in
     mkIf cfg.enable {
+      assertions = [
+        {
+          assertion = !(containsAny cfg.extraArgs forbiddenArgs);
+          message = "extraArgs must not include ${builtins.concatStringsSep "," forbiddenArgs}";
+        }
+      ];
+
       environment.etc = {
         "k0s/k0s.yaml".source = configFile;
         "k0s/manifest.yaml".text = cfg.manifest;
@@ -128,8 +169,6 @@ in
         "d /var/lib/k0s/manifests/custom 0755 k0s k0s -"
         "L /var/lib/k0s/manifests/custom/0_manifest.yaml - - - - /etc/k0s/manifest.yaml"
       ];
-
-      ## END MANIFESTS
 
       systemd.services.${unitName} = {
         description = "k0s - Zero Friction Kubernetes";
@@ -158,11 +197,10 @@ in
             + optionalString (cfg.role != "worker") " --config=${configFile}"
             + optionalString (cfg.role == "single") " --single"
             + optionalString (cfg.role == "controller+worker") " --enable-worker --no-taints"
-            + optionalString requireJoinToken " --token-file=${cfg.tokenFile}";
+            + optionalString requireJoinToken " --token-file=${cfg.tokenFile}"
+            + " ${cfg.extraArgs}";
         };
-        unitConfig = mkIf requireJoinToken {
-          ConditionPathExists = cfg.tokenFile;
-        };
+        unitConfig = mkIf requireJoinToken { ConditionPathExists = cfg.tokenFile; };
       };
 
       users.users = concatMapAttrs (name: value: {

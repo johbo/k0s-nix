@@ -7,6 +7,9 @@
         services.k0s = {
           enable = true;
           role = "controller+worker";
+          controller = {
+            isLeader = true;
+          };
           spec.api = {
             address = config.networking.primaryIPAddress;
             sans = [ config.networking.primaryIPAddress ];

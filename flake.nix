@@ -1,7 +1,7 @@
 {
   description = "k0s - The Zero Friction Kubernetes for NixOS";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
 
   outputs =
     { self, nixpkgs, ... }:
@@ -15,8 +15,9 @@
           k0s_1_31
           k0s_1_32
           k0s_1_33
+          k0s_1_34
           ;
-        k0s = k0s_1_32;
+        k0s = k0s_1_34;
       };
 
       lib = nixpkgs.lib;
@@ -47,15 +48,13 @@
 
       formatter = (lib.genAttrs allSystems) (system: nixpkgs.legacyPackages.${system}.nixfmt-tree);
 
-      checks = forAllK0sSystems (
+      checks = (lib.genAttrs allSystems) (
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          forAllTests = lib.genAttrs [
-            "single"
-            "ctrl-wrkr"
-            "graceful-shutdown"
-          ];
+          forAllTests = lib.genAttrs (
+            map (name: lib.strings.removeSuffix ".nix" name) (builtins.attrNames (builtins.readDir ./tests))
+          );
         in
         forAllTests (
           test:
