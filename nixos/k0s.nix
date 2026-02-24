@@ -116,13 +116,21 @@ in
       default = "";
       type = str;
     };
+
+    unitName = mkOption {
+      type = str;
+      readOnly = true;
+      default = "k0s" + (if cfg.role == "worker" then "worker" else "controller");
+      description = ''
+        The systemd service unit name, derived from the role.
+      '';
+    };
   };
 
   config =
     let
       subcommand = if (cfg.role == "worker") then "worker" else "controller";
       requireJoinToken = cfg.role == "worker" || !(cfg.controller.isLeader or true);
-      unitName = "k0s" + subcommand;
       configFile =
         if cfg.configText != "" then
           pkgs.writeText "k0s.yaml" cfg.configText
@@ -154,7 +162,7 @@ in
 
       environment.etc."k0s/k0s.yaml".source = configFile;
 
-      systemd.services.${unitName} = {
+      systemd.services.${cfg.unitName} = {
         description = "k0s - Zero Friction Kubernetes";
         documentation = [ "https://docs.k0sproject.io" ];
         path = with pkgs; [

@@ -56,6 +56,44 @@
           forAllTests = lib.genAttrs (
             map (name: lib.strings.removeSuffix ".nix" name) (builtins.attrNames (builtins.readDir ./tests))
           );
+
+          evalConfig =
+            modules:
+            (lib.nixosSystem {
+              inherit system;
+              modules = [
+                self.nixosModules.default
+                { nixpkgs.overlays = [ self.overlays.default ]; }
+              ] ++ modules;
+            }).config;
+
+          unitNameTests =
+            let
+              controllerCfg = evalConfig [
+                {
+                  services.k0s.enable = true;
+                  services.k0s.role = "controller";
+                }
+              ];
+              workerCfg = evalConfig [
+                {
+                  services.k0s.enable = true;
+                  services.k0s.role = "worker";
+                }
+              ];
+              singleCfg = evalConfig [
+                {
+                  services.k0s.enable = true;
+                  services.k0s.role = "single";
+                }
+              ];
+            in
+            pkgs.runCommand "unit-name-tests" { } ''
+              [[ "${controllerCfg.services.k0s.unitName}" == "k0scontroller" ]] || { echo "controller: expected k0scontroller"; exit 1; }
+              [[ "${workerCfg.services.k0s.unitName}" == "k0sworker" ]] || { echo "worker: expected k0sworker"; exit 1; }
+              [[ "${singleCfg.services.k0s.unitName}" == "k0scontroller" ]] || { echo "single: expected k0scontroller"; exit 1; }
+              touch $out
+            '';
         in
         forAllTests (
           test:
@@ -70,6 +108,7 @@
             };
           }
         )
+        // { inherit unitNameTests; }
       );
 
     };
