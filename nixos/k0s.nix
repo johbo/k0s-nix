@@ -116,7 +116,7 @@ in
       isWorker = cfg.role == "worker";
       isLeader = (cfg.role == "single") || (cfg.controller.isLeader or false);
       requireJoinToken = isWorker || (!isLeader && !isExternalEtcd);
-      unitName = "k0s" + subcommand;
+      unitName = "k0s";
       configFile = (pkgs.formats.yaml { }).generate "k0s.yaml" {
         apiVersion = "k0s.k0sproject.io/v1beta1";
         kind = "Cluster";
