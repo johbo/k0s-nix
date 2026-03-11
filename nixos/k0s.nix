@@ -122,7 +122,7 @@ in
     let
       subcommand = if (cfg.role == "worker") then "worker" else "controller";
       requireJoinToken = cfg.role == "worker" || !(cfg.controller.isLeader or true);
-      unitName = "k0s" + subcommand;
+      unitName = "k0s";
       configFile =
         if cfg.configText != "" then
           pkgs.writeText "k0s.yaml" cfg.configText
