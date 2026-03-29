@@ -121,7 +121,10 @@ in
   config =
     let
       subcommand = if (cfg.role == "worker") then "worker" else "controller";
-      requireJoinToken = cfg.role == "worker" || !(cfg.controller.isLeader or true);
+      isExternalEtcd = cfg.spec.storage.type == "etcd" && cfg.spec.storage.etcd.externalCluster != null;
+      isWorker = cfg.role == "worker";
+      isLeader = cfg.controller.isLeader or false;
+      requireJoinToken = isWorker || (!isLeader && !isExternalEtcd);
       unitName = "k0s" + subcommand;
       configFile =
         if cfg.configText != "" then
