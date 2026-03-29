@@ -109,6 +109,14 @@ in
       type = str;
     };
 
+    manifest = mkOption {
+      description = ''
+        Text of the yaml file to be placed in /var/lib/k0s/manifests
+      '';
+      default = "";
+      type = str;
+    };
+
     extraArgs = mkOption {
       description = ''
         Extra arguments to pass to systemd ExecStart
@@ -152,7 +160,15 @@ in
         }
       ];
 
-      environment.etc."k0s/k0s.yaml".source = configFile;
+      environment.etc = {
+        "k0s/k0s.yaml".source = configFile;
+        "k0s/manifest.yaml".text = cfg.manifest;
+      };
+
+      systemd.tmpfiles.rules = [
+        "d /var/lib/k0s/manifests/custom 0755 k0s k0s -"
+        "L /var/lib/k0s/manifests/custom/0_manifest.yaml - - - - /etc/k0s/manifest.yaml"
+      ];
 
       systemd.services.${unitName} = {
         description = "k0s - Zero Friction Kubernetes";
