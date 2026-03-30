@@ -125,8 +125,13 @@ in
       isExternalEtcdFromText =
         let
           yaml = cfg.configText;
-          hasEtcdType = lib.strings.hasInfix "type: etcd" yaml || lib.strings.hasInfix "type:\"etcd\"" yaml;
-          hasExternalCluster = lib.strings.hasInfix "externalCluster:" yaml;
+          hasEtcdType =
+            lib.strings.hasInfix "type: etcd" yaml ||
+            lib.strings.hasInfix "type:\"etcd\"" yaml ||
+            lib.strings.hasInfix "\"type\":\"etcd\"" yaml;
+          hasExternalCluster =
+            lib.strings.hasInfix "externalCluster:" yaml ||
+            lib.strings.hasInfix "\"externalCluster\"" yaml;
         in
         hasEtcdType && hasExternalCluster;
       isExternalEtcd = isExternalEtcdFromSpec || isExternalEtcdFromText;
