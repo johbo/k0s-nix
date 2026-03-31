@@ -45,7 +45,7 @@ let
     ipV4WithPort = strMatching "^${ipV4Regex}:${portRegex}$";
     ipV6WithPort = strMatching "^\\[${ipV6Regex}\\]:${portRegex}$";
     ipWithPort = either ipV4WithPort ipV6WithPort;
-    etcdEndpoint = strMatching "^https?:\\/\\/(\\[${ipV6Regex}\\]|${ipV4Regex}|${dnsNameRegex}):${portRegex}$";
+    etcdEndpoint = strMatching "^https?:\/\/(\\[${ipV6Regex}\\]|${ipV4Regex}|${dnsNameRegex}):${portRegex}$";
     emptyOrPath = either (enum [ "" ]) path;
     image = submodule {
       options = {
