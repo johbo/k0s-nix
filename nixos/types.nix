@@ -16,7 +16,7 @@ let
       let
         port = lib.strings.toIntBase10 portStr;
       in
-      port >= 0 && port <= 65535
+      port >= 1 && port <= 65535
     );
 
   isValidIpV4 =
@@ -142,19 +142,13 @@ let
         hostPort = lib.splitString ":" rest;
       in
       (scheme == "http" || scheme == "https")
-      && lib.length hostPort == 2
-      && isValidPort (lib.elemAt hostPort 1)
+      && lib.length hostPort >= 2
+      && isValidPort (lib.lists.last hostPort)
       && (
         let
-          host = lib.elemAt hostPort 0;
+          host = lib.concatStringsSep ":" (lib.init hostPort);
         in
-        (
-          lib.hasPrefix "[" host
-          && lib.hasSuffix "]" host
-          && isValidIpV6 (lib.substring 1 (lib.stringLength host - 2) host)
-        )
-        || isValidIpV4 host
-        || isValidDnsName host
+        isValidIpV6Brackets host || isValidIpV4 host || isValidDnsName host
       );
 in
 rec {
