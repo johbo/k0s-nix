@@ -14,7 +14,7 @@ let
   ipV6Regex = "${hexChunk}:{7,7}${hexChunk}|${hexChunk}:{1,7}:|${hexChunk}:{1,6}:${hexChunk}|${hexChunk}:{1,5}(:${hexChunk}){1,2}|${hexChunk}:{1,4}(:${hexChunk}){1,3}|${hexChunk}:{1,3}(:${hexChunk}){1,4}|${hexChunk}:{1,2}(:${hexChunk}){1,5}|${hexChunk}:((:${hexChunk}){1,6})|:((:${hexChunk}){1,7}|:)|fe80:(:${hexChunk}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}${ipV4Regex}|${hexChunk}:{1,4}:${ipV4Regex}";
   cidrV4MaskRegex = "([1-9]|[12][0-9]|3[0-2])";
   cidrV6MaskRegex = "([1-9]|[1-9][0-9]|1[01][0-9]|12[0-8])";
-  dnsNameRegex = "([a-zA-Z0-9](-[a-zA-Z0-9]+)*[.])*([a-zA-Z0-9](-[a-zA-Z0-9]+)*)";
+  dnsNameRegex = "(([a-zA-Z0-9]|[a-zA-Z0-9][-a-zA-Z0-9]*[a-zA-Z0-9])[.])*([A-Za-z0-9]|[A-Za-z0-9][-A-Za-z0-9]*[A-Za-z0-9])";
   portRegex = "((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([1-9][0-9]{0,3})|(0))";
   types = rec {
     ipV4 = strMatching "^${ipV4Regex}$";
