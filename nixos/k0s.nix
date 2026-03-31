@@ -100,15 +100,6 @@ in
       default = { };
     };
 
-    configText = mkOption {
-      description = ''
-        The configuration file in YAML format.
-        A default will be generated if unset.
-      '';
-      default = "";
-      type = str;
-    };
-
     extraArgs = mkOption {
       description = ''
         Extra arguments to pass to systemd ExecStart
@@ -126,18 +117,14 @@ in
       isLeader = (cfg.role == "single") || (cfg.controller.isLeader or false);
       requireJoinToken = isWorker || (!isLeader && !isExternalEtcd);
       unitName = "k0s" + subcommand;
-      configFile =
-        if cfg.configText != "" then
-          pkgs.writeText "k0s.yaml" cfg.configText
-        else
-          (pkgs.formats.yaml { }).generate "k0s.yaml" {
-            apiVersion = "k0s.k0sproject.io/v1beta1";
-            kind = "Cluster";
-            metadata = {
-              name = cfg.clusterName;
-            };
-            inherit (cfg) spec;
-          };
+      configFile = (pkgs.formats.yaml { }).generate "k0s.yaml" {
+        apiVersion = "k0s.k0sproject.io/v1beta1";
+        kind = "Cluster";
+        metadata = {
+          name = cfg.clusterName;
+        };
+        inherit (cfg) spec;
+      };
       forbiddenArgs = [
         "--data-dir"
         "--config"
