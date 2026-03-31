@@ -10,17 +10,15 @@ let
     ;
 
   isValidPort = portStr:
-    let
-      port = lib.strings.toIntBase10 portStr;
-    in
-    port != null && port >= 0 && port <= 65535;
+    lib.match "[0-9]+" portStr != null
+    && (let port = lib.strings.toIntBase10 portStr; in port >= 0 && port <= 65535);
 
   isValidIpV4 = ipStr:
     let
       octets = lib.splitString "." ipStr;
     in
     lib.length octets == 4
-    && lib.all (o: let p = lib.strings.toIntBase10 o; in p != null && p >= 0 && p <= 255) octets;
+    && lib.all (o: lib.match "[0-9]+" o != null && (let p = lib.strings.toIntBase10 o; in p >= 0 && p <= 255)) octets;
 
   isValidIpV4WithPort = s:
     let
@@ -60,9 +58,11 @@ let
     else
       let
         ip = lib.elemAt parts 0;
-        prefix = lib.strings.toIntBase10 (lib.elemAt parts 1);
+        prefixStr = lib.elemAt parts 1;
       in
-      prefix != null && prefix >= 0 && prefix <= 32 && isValidIpV4 ip;
+      lib.match "[0-9]+" prefixStr != null
+      && (let prefix = lib.strings.toIntBase10 prefixStr; in prefix >= 0 && prefix <= 32)
+      && isValidIpV4 ip;
 
   isValidCidrV6 = s:
     let
@@ -72,9 +72,11 @@ let
     else
       let
         ip = lib.elemAt parts 0;
-        prefix = lib.strings.toIntBase10 (lib.elemAt parts 1);
+        prefixStr = lib.elemAt parts 1;
       in
-      prefix != null && prefix >= 0 && prefix <= 128 && isValidIpV6 ip;
+      lib.match "[0-9]+" prefixStr != null
+      && (let prefix = lib.strings.toIntBase10 prefixStr; in prefix >= 0 && prefix <= 128)
+      && isValidIpV6 ip;
 
   isValidDnsName = hostname:
     let
