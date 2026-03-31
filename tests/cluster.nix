@@ -44,7 +44,7 @@ in
     in
     ''
       start_all()
-      ctrl.wait_for_unit("k0scontroller")
+      ctrl.wait_for_unit("k0s")
       ctrl.wait_for_file("/run/k0s/status.sock")
       ctrl.succeed("${k0s}/bin/k0s status")
 
@@ -55,12 +55,12 @@ in
         return stdout.strip()
 
       for node in [wrkr1, wrkr2]:
-        info=node.get_unit_info("k0sworker")
+        info=node.get_unit_info("k0s")
         assert info['ActiveState'] == "inactive"
         token = mkJoinToken()
         node.succeed(f"bash -c 'echo  {token} > ${tokenFile}'")
-        node.systemctl("start k0sworker")
-        node.wait_for_unit("k0sworker")
+        node.systemctl("start k0s")
+        node.wait_for_unit("k0s")
         node.wait_for_file("/run/k0s/status.sock")
         node.succeed("${k0s}/bin/k0s status")
     '';
