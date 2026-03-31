@@ -121,22 +121,18 @@ in
   config =
     let
       subcommand = if (cfg.role == "worker") then "worker" else "controller";
-      isExternalEtcdFromSpec = cfg.spec.storage.type == "etcd" && cfg.spec.storage.etcd.externalCluster != null;
+      isExternalEtcdFromSpec =
+        cfg.spec.storage.type == "etcd" && cfg.spec.storage.etcd.externalCluster != null;
       isExternalEtcdFromText =
         let
           yaml = cfg.configText;
-          hasEtcdType =
-            lib.strings.hasInfix "type: etcd" yaml ||
-            lib.strings.hasInfix "type:\"etcd\"" yaml ||
-            lib.strings.hasInfix "\"type\":\"etcd\"" yaml;
-          hasExternalCluster =
-            lib.strings.hasInfix "externalCluster:" yaml ||
-            lib.strings.hasInfix "\"externalCluster\"" yaml;
+          hasEtcdType = lib.strings.hasInfix "\"type\":\"etcd\"" yaml;
+          hasExternalCluster = lib.strings.hasInfix "externalCluster" yaml;
         in
         hasEtcdType && hasExternalCluster;
       isExternalEtcd = isExternalEtcdFromSpec || isExternalEtcdFromText;
       isWorker = cfg.role == "worker";
-      isLeader = cfg.controller.isLeader or false;
+      isLeader = (cfg.role == "single") || (cfg.controller.isLeader or false);
       requireJoinToken = isWorker || (!isLeader && !isExternalEtcd);
       unitName = "k0s" + subcommand;
       configFile =

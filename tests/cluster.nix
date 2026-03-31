@@ -20,7 +20,7 @@ let
 
       services.k0s = {
         enable = true;
-        role = role;
+        inherit role;
         spec.api = {
           address = apiAddress;
           sans = [ apiAddress ];
@@ -40,7 +40,7 @@ in
     { nodes }:
     let
       k0s = nodes.ctrl.services.k0s.package;
-      tokenFile = nodes.wrkr1.services.k0s.tokenFile;
+      inherit (nodes.wrkr1.services.k0s) tokenFile;
     in
     ''
       start_all()
