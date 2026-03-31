@@ -109,6 +109,13 @@ in
       type = str;
     };
 
+    requireJoinToken = lib.optionalAttrs (cfg.configText != "") (
+      lib.mkOption {
+        description = "Whether a join token is required for this node to join the cluster.";
+        type = lib.types.bool;
+      }
+    );
+
     extraArgs = mkOption {
       description = ''
         Extra arguments to pass to systemd ExecStart
@@ -121,19 +128,11 @@ in
   config =
     let
       subcommand = if (cfg.role == "worker") then "worker" else "controller";
-      isExternalEtcdFromSpec =
-        cfg.spec.storage.type == "etcd" && cfg.spec.storage.etcd.externalCluster != null;
-      isExternalEtcdFromText =
-        let
-          yaml = cfg.configText;
-          hasEtcdType = lib.strings.hasInfix "\"type\":\"etcd\"" yaml;
-          hasExternalCluster = lib.strings.hasInfix "externalCluster" yaml;
-        in
-        hasEtcdType && hasExternalCluster;
-      isExternalEtcd = isExternalEtcdFromSpec || isExternalEtcdFromText;
+      isExternalEtcd = cfg.spec.storage.type == "etcd" && cfg.spec.storage.etcd.externalCluster != null;
       isWorker = cfg.role == "worker";
       isLeader = (cfg.role == "single") || (cfg.controller.isLeader or false);
-      requireJoinToken = isWorker || (!isLeader && !isExternalEtcd);
+      requireJoinToken =
+        if cfg.configText != "" then cfg.requireJoinToken else isWorker || (!isLeader && !isExternalEtcd);
       unitName = "k0s" + subcommand;
       configFile =
         if cfg.configText != "" then
