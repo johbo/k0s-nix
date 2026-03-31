@@ -24,10 +24,10 @@ let
     cidrV4 = strMatching "^${ipV4Regex}/${cidrV4MaskRegex}$";
     cidrV6 = strMatching "^${ipV6Regex}/${cidrV6MaskRegex}$";
     cidr = either cidrV4 cidrV6;
-  ipV4WithPort = strMatching "^${ipV4Regex}:${portRegex}$";
-  ipV6WithPort = strMatching "^\\[${ipV6Regex}\\]:${portRegex}$";
-  ipWithPort = either ipV4WithPort ipV6WithPort;
-  etcdEndpoint = strMatching "^https?://[a-zA-Z0-9.-]+:${portRegex}$";
+    ipV4WithPort = strMatching "^${ipV4Regex}:${portRegex}$";
+    ipV6WithPort = strMatching "^\\[${ipV6Regex}\\]:${portRegex}$";
+    ipWithPort = either ipV4WithPort ipV6WithPort;
+    etcdEndpoint = strMatching "^https?://[a-zA-Z0-9.-]+:${portRegex}$";
     emptyOrPath = either (enum [ "" ]) path;
     image = submodule {
       options = {
