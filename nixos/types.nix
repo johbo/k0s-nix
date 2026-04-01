@@ -1,7 +1,6 @@
-{ lib, ... }@args:
+{ lib, ... }:
 let
   inherit (lib.types)
-    strMatching
     either
     enum
     path
@@ -9,35 +8,171 @@ let
     submodule
     str
     ;
-  ipV4Regex = "((25[0-5]|(2[0-4]|1[[:digit:]]|[1-9])?[[:digit:]])[.]){3}(25[0-5]|(2[0-4]|1[[:digit:]]|[1-9])?[[:digit:]])";
-  ipV6Regex = "(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])[.]){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])[.]){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))";
-  cidrV4MaskRegex = "([1-9]|[12][0-9]|3[0-2])";
-  cidrV6MaskRegex = "([1-9]|[1-9][0-9]|1[01][0-9]|12[0-8])";
-  dnsNameRegex = "(([a-zA-Z0-9]|[a-zA-Z0-9][-a-zA-Z0-9]*[a-zA-Z0-9])[.])*([A-Za-z0-9]|[A-Za-z0-9][-A-Za-z0-9]*[A-Za-z0-9])";
-  portRegex = "((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))";
-  types = rec {
-    ipV4 = strMatching "^${ipV4Regex}$";
-    ipV6 = strMatching "^${ipV6Regex}$";
-    ip = either ipV4 ipV6;
-    dnsName = addCheck (strMatching "^${dnsNameRegex}$") (a: !ip.check a);
-    ipOrDnsName = either ip dnsName;
-    cidrV4 = strMatching "^${ipV4Regex}/${cidrV4MaskRegex}$";
-    cidrV6 = strMatching "^${ipV6Regex}/${cidrV6MaskRegex}$";
-    cidr = either cidrV4 cidrV6;
-    ipV4WithPort = strMatching "^${ipV4Regex}:${portRegex}$";
-    ipV6WithPort = strMatching "^\\[${ipV6Regex}\\]:${portRegex}$";
-    ipWithPort = either ipV4WithPort ipV6WithPort;
-    emptyOrPath = either (enum [ "" ]) path;
-    image = submodule {
-      options = {
-        image = lib.mkOption {
-          type = str;
-        };
-        version = lib.mkOption {
-          type = str;
-        };
+
+  isValidPort =
+    portStr:
+    lib.match "[0-9]+" portStr != null
+    && (
+      let
+        port = lib.strings.toIntBase10 portStr;
+      in
+      port >= 1 && port <= 65535
+    );
+
+  isValidIpV4 =
+    ipStr:
+    let
+      octets = lib.splitString "." ipStr;
+    in
+    lib.length octets == 4
+    && lib.all (
+      o:
+      lib.match "[0-9]+" o != null
+      && (
+        let
+          p = lib.strings.toIntBase10 o;
+        in
+        p >= 0 && p <= 255
+      )
+    ) octets;
+
+  isValidIpV4WithPort =
+    s:
+    let
+      parts = lib.splitString ":" s;
+    in
+    lib.length parts == 2 && isValidIpV4 (lib.elemAt parts 0) && isValidPort (lib.elemAt parts 1);
+
+  isValidIpV6 =
+    ipStr:
+    let
+      groups = lib.splitString ":" ipStr;
+      nonEmpty = lib.filter (g: g != "") groups;
+      numGroups = lib.length nonEmpty;
+      hasDoubleColon = lib.any (g: g == "") groups;
+    in
+    ipStr != ""
+    && (if hasDoubleColon then numGroups >= 1 && numGroups <= 7 else numGroups == 8)
+    && lib.all (g: lib.match "[0-9a-fA-F]{1,4}" g != null) nonEmpty;
+
+  isValidIpV6Brackets =
+    s:
+    let
+      len = lib.stringLength s;
+      inner = if len > 2 then lib.substring 1 (len - 2) s else "";
+    in
+    lib.hasPrefix "[" s && lib.hasSuffix "]" s && isValidIpV6 inner;
+
+  isValidIpV6WithPort =
+    s:
+    let
+      parts = lib.splitString ":" s;
+    in
+    lib.length parts == 2
+    && isValidIpV6Brackets (lib.elemAt parts 0)
+    && isValidPort (lib.elemAt parts 1);
+
+  isValidCidrV4 =
+    s:
+    let
+      parts = lib.splitString "/" s;
+    in
+    if lib.length parts != 2 then
+      false
+    else
+      let
+        ip = lib.elemAt parts 0;
+        prefixStr = lib.elemAt parts 1;
+      in
+      lib.match "[0-9]+" prefixStr != null
+      && (
+        let
+          prefix = lib.strings.toIntBase10 prefixStr;
+        in
+        prefix >= 0 && prefix <= 32
+      )
+      && isValidIpV4 ip;
+
+  isValidCidrV6 =
+    s:
+    let
+      parts = lib.splitString "/" s;
+    in
+    if lib.length parts != 2 then
+      false
+    else
+      let
+        ip = lib.elemAt parts 0;
+        prefixStr = lib.elemAt parts 1;
+      in
+      lib.match "[0-9]+" prefixStr != null
+      && (
+        let
+          prefix = lib.strings.toIntBase10 prefixStr;
+        in
+        prefix >= 0 && prefix <= 128
+      )
+      && isValidIpV6 ip;
+
+  isValidDnsName =
+    hostname:
+    let
+      labels = lib.splitString "." hostname;
+      isValidLabel =
+        l:
+        lib.stringLength l > 0
+        && lib.stringLength l <= 63
+        && lib.match "[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?" l != null;
+      isNumericLabel = l: lib.match "[0-9]+" l != null;
+      allNumeric = lib.all isNumericLabel labels;
+    in
+    lib.length labels >= 1 && lib.all isValidLabel labels && !allNumeric;
+
+  isValidEtcdEndpoint =
+    s:
+    let
+      parts = lib.splitString "://" s;
+    in
+    if lib.length parts != 2 then
+      false
+    else
+      let
+        scheme = lib.elemAt parts 0;
+        rest = lib.elemAt parts 1;
+        hostPort = lib.splitString ":" rest;
+      in
+      (scheme == "http" || scheme == "https")
+      && lib.length hostPort >= 2
+      && isValidPort (lib.lists.last hostPort)
+      && (
+        let
+          host = lib.concatStringsSep ":" (lib.init hostPort);
+        in
+        isValidIpV6Brackets host || isValidIpV4 host || isValidDnsName host
+      );
+in
+rec {
+  ipV4 = addCheck str isValidIpV4;
+  ipV6 = addCheck str isValidIpV6;
+  ip = either ipV4 ipV6;
+  dnsName = addCheck str isValidDnsName;
+  ipOrDnsName = either ip dnsName;
+  cidrV4 = addCheck str isValidCidrV4;
+  cidrV6 = addCheck str isValidCidrV6;
+  cidr = either cidrV4 cidrV6;
+  ipV4WithPort = addCheck str isValidIpV4WithPort;
+  ipV6WithPort = addCheck str isValidIpV6WithPort;
+  ipWithPort = either ipV4WithPort ipV6WithPort;
+  etcdEndpoint = addCheck str isValidEtcdEndpoint;
+  emptyOrPath = either (enum [ "" ]) path;
+  image = submodule {
+    options = {
+      image = lib.mkOption {
+        type = str;
+      };
+      version = lib.mkOption {
+        type = str;
       };
     };
   };
-in
-types
+}

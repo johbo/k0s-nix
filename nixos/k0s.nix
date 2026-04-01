@@ -100,15 +100,6 @@ in
       default = { };
     };
 
-    configText = mkOption {
-      description = ''
-        The configuration file in YAML format.
-        A default will be generated if unset.
-      '';
-      default = "";
-      type = str;
-    };
-
     extraArgs = mkOption {
       description = ''
         Extra arguments to pass to systemd ExecStart
@@ -121,20 +112,19 @@ in
   config =
     let
       subcommand = if (cfg.role == "worker") then "worker" else "controller";
-      requireJoinToken = cfg.role == "worker" || !(cfg.controller.isLeader or true);
+      isExternalEtcd = cfg.spec.storage.type == "etcd" && cfg.spec.storage.etcd.externalCluster != null;
+      isWorker = cfg.role == "worker";
+      isLeader = (cfg.role == "single") || (cfg.controller.isLeader or false);
+      requireJoinToken = isWorker || (!isLeader && !isExternalEtcd);
       unitName = "k0s" + subcommand;
-      configFile =
-        if cfg.configText != "" then
-          pkgs.writeText "k0s.yaml" cfg.configText
-        else
-          (pkgs.formats.yaml { }).generate "k0s.yaml" {
-            apiVersion = "k0s.k0sproject.io/v1beta1";
-            kind = "Cluster";
-            metadata = {
-              name = cfg.clusterName;
-            };
-            inherit (cfg) spec;
-          };
+      configFile = (pkgs.formats.yaml { }).generate "k0s.yaml" {
+        apiVersion = "k0s.k0sproject.io/v1beta1";
+        kind = "Cluster";
+        metadata = {
+          name = cfg.clusterName;
+        };
+        inherit (cfg) spec;
+      };
       forbiddenArgs = [
         "--data-dir"
         "--config"

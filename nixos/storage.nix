@@ -66,7 +66,7 @@ in
               description = ''
                 Array of Etcd endpoints to use.
               '';
-              type = addCheck (listOf (addCheck customTypes.ipOrDnsName)) (l: builtins.length l > 0);
+              type = listOf customTypes.etcdEndpoint;
             };
             etcdPrefix = mkOption {
               description = ''
