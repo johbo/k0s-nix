@@ -63,10 +63,28 @@ let
     in
     lib.hasPrefix "[" s && lib.hasSuffix "]" s && isValidIpV6 inner;
 
+  splitLast =
+    sep: s:
+    let
+      parts = lib.splitString sep s;
+      len = lib.length parts;
+    in
+    if len <= 1 then
+      [ s ]
+    else
+      let
+        prefix = lib.concatStringsSep sep (lib.take (len - 1) parts);
+        suffix = lib.last parts;
+      in
+      [
+        prefix
+        suffix
+      ];
+
   isValidIpV6WithPort =
     s:
     let
-      parts = lib.splitString ":" s;
+      parts = splitLast ":" s;
     in
     lib.length parts == 2
     && isValidIpV6Brackets (lib.elemAt parts 0)
@@ -126,7 +144,10 @@ let
       isNumericLabel = l: lib.match "[0-9]+" l != null;
       allNumeric = lib.all isNumericLabel labels;
     in
-    lib.length labels >= 1 && lib.all isValidLabel labels && !allNumeric;
+    lib.stringLength hostname <= 253
+    && lib.length labels >= 1
+    && lib.all isValidLabel labels
+    && !allNumeric;
 
   isValidEtcdEndpoint =
     s:
@@ -138,18 +159,18 @@ let
     else
       let
         scheme = lib.elemAt parts 0;
-        rest = lib.elemAt parts 1;
-        hostPort = lib.splitString ":" rest;
+        rest = splitLast ":" (lib.elemAt parts 1);
       in
-      (scheme == "http" || scheme == "https")
-      && lib.length hostPort >= 2
-      && isValidPort (lib.lists.last hostPort)
-      && (
+      if lib.length rest != 2 then
+        false
+      else
         let
-          host = lib.concatStringsSep ":" (lib.init hostPort);
+          host = lib.elemAt rest 0;
+          port = lib.elemAt rest 1;
         in
-        isValidIpV6Brackets host || isValidIpV4 host || isValidDnsName host
-      );
+        (scheme == "http" || scheme == "https")
+        && isValidPort port
+        && (isValidIpV6Brackets host || isValidIpV4 host || isValidDnsName host);
 in
 rec {
   ipV4 = addCheck str isValidIpV4;
