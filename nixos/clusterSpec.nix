@@ -103,14 +103,24 @@ in
           kubeproxy = imageOption;
           coredns = imageOption;
           pause = imageOption;
-          calico = {
-            cni = imageOption;
-            flexvolume = imageOption;
-            node = imageOption;
-            kubecontrollers = imageOption;
+          calico = mkOption {
+            type = submodule {
+              options = {
+                cni = imageOption;
+                flexvolume = imageOption;
+                node = imageOption;
+                kubecontrollers = imageOption;
+              };
+            };
           };
-          kuberouter.cni = imageOption;
-          kuberouter.cniInstaller = imageOption;
+          kuberouter = mkOption {
+            type = submodule {
+              options = {
+                cni = imageOption;
+                cniInstaller = imageOption;
+              };
+            };
+          };
           repository = mkOption { type = str; };
           default_pull_policy = mkOption {
             type = enum [
