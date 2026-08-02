@@ -11,11 +11,6 @@
 }:
 let
   releases = {
-    k0s_1_27 = import ./1_27.nix;
-    k0s_1_28 = import ./1_28.nix;
-    k0s_1_30 = import ./1_30.nix;
-    k0s_1_31 = import ./1_31.nix;
-    k0s_1_32 = import ./1_32.nix;
     k0s_1_33 = import ./1_33.nix;
     k0s_1_34 = import ./1_34.nix;
     k0s_1_35 = import ./1_35.nix;
