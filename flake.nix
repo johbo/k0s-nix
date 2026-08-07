@@ -45,16 +45,30 @@
 
       formatter = (lib.genAttrs allSystems) (system: nixpkgs.legacyPackages.${system}.nixfmt-tree);
 
-      checks = (lib.genAttrs allSystems) (
+      checks = (lib.genAttrs k0sSystems) (
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          forAllTests = lib.genAttrs (
-            map (name: lib.strings.removeSuffix ".nix" name) (builtins.attrNames (builtins.readDir ./tests))
+          versions = builtins.filter (name: name != "k0s") (builtins.attrNames self.packages.${system});
+          tests = map (name: lib.strings.removeSuffix ".nix" name) (
+            builtins.attrNames (builtins.readDir ./tests)
           );
+          forAllVersionsAndTests =
+            check:
+            let
+              nestedPairs = map (
+                version:
+                map (test: {
+                  name = "${version}_${test}";
+                  value = check version test;
+                }) tests
+              ) versions;
+              flatPairs = builtins.concatLists nestedPairs;
+            in
+            builtins.listToAttrs flatPairs;
         in
-        forAllTests (
-          test:
+        forAllVersionsAndTests (
+          version: test:
           pkgs.testers.runNixOSTest {
             imports = [ ./tests/${test}.nix ];
             node = {
@@ -62,7 +76,13 @@
             };
             defaults = {
               imports = [ self.nixosModules.default ];
-              nixpkgs.overlays = [ self.overlays.default ];
+              nixpkgs.overlays = [
+                self.overlays.default
+                (final: prev: {
+                  inherit final;
+                  k0s = prev."${version}";
+                })
+              ];
             };
           }
         )
