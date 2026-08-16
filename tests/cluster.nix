@@ -49,9 +49,9 @@ in
       ctrl.succeed("${k0s}/bin/k0s status")
 
       def mkJoinToken():
-        (exit_code, stdout) = ctrl.execute("${k0s}/bin/k0s token create --role=worker")
+        (exit_code, stdout) = ctrl.execute("${k0s}/bin/k0s token create --role=worker 2>&1")
         if exit_code != 0:
-          raise Exception(f"failed to create join token: {stdout}")
+          raise Exception(f"failed to create join token ({exit_code}): {stdout}")
         return stdout.strip()
 
       for node in [wrkr1, wrkr2]:
