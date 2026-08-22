@@ -13,8 +13,8 @@ The implementation is in its early phase. It is possible to use and make work
 ## Contributions
 
 Both contributions and forks are welcome, also if this should ever reach a state
-which could be integrated upstream into Nixpkgs then I would happy archive this
-Flake for it.
+which could be integrated upstream into Nixpkgs then I would happily archive
+this Flake for it.
 
 
 ## Usage
@@ -34,7 +34,7 @@ Inspect the result in `./result`.
 `/etc/k0s/k0stoken` (configurable via `services.k0s.tokenFile`), otherwise the
 service will not start.
 
-After the join the content is not needed anymore an the file can be emptied.
+After the join the content is not needed anymore and the file can be emptied.
 
 Providing the token has to be done either manually or by your favorite
 automation tooling.
@@ -62,7 +62,7 @@ The CI process runs a small, but growing, suite of tests on every pull request b
 Version upgrades to the k0s binary will occur in a relatively timely manner.
 The `k0s` nix package attribute will change minor versions from time to time (i.e.: `1.33.x -> 1.34.x`).
 
-Most users can use this flake from the its `main` branch. Users that wish to keep a more
+Most users can use this flake from its `main` branch. Users that wish to keep a more
 stable base can point at a specific commit `sha` instead of the `main` branch,
 e.g. in their `flake.nix` file, like so:
 
@@ -82,7 +82,7 @@ and internals.
 
 ## Credit
 
-- The `k0s` package definition tool the work from this PR as input:
+- The `k0s` package definition took the work from this PR as input:
   <https://github.com/NixOS/nixpkgs/pull/258846>
 
 
