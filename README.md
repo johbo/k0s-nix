@@ -75,7 +75,7 @@ e.g. in their `flake.nix` file, like so:
 ```
 {
   inputs = {
-    k0s-nix.url = "github:johbo/k0s-nix/cfdbd7ace82d6437aaa9324a53d70cf3521ef22c";
+    k0s-nix.url = "github:nix-community/k0s-nix/cfdbd7ace82d6437aaa9324a53d70cf3521ef22c";
   }
 }
 ```
