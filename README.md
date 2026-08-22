@@ -13,7 +13,7 @@ The implementation is in its early phase. It is possible to use and make work
 ## Contributions
 
 Both contributions and forks are welcome, also if this should ever reach a state
-which could be integrated upstream into Nixpkgs then I would happily archive
+which could be integrated upstream into Nixpkgs then we would happily archive
 this Flake for it.
 
 
@@ -84,6 +84,12 @@ and internals.
 
 - The `k0s` package definition took the work from this PR as input:
   <https://github.com/NixOS/nixpkgs/pull/258846>
+
+
+## Maintainers
+
+- [@johbo](https://github.com/johbo)
+- [@plaflamme](https://github.com/plaflamme)
 
 
 ## Contact
