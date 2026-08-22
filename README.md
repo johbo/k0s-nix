@@ -1,5 +1,11 @@
 # k0s-nix Flake
 
+> **The project has moved** to the nix-community organization:
+> <https://github.com/nix-community/k0s-nix>. This is a personal fork,
+> kept as the place pull requests are opened from, and this branch
+> carries the project as it stood at the move. Change your flake input
+> to `github:nix-community/k0s-nix`.
+
 This repository contains a Nix Flake which provides the necessary utilities to
 use `k0s` inside of a NixOS system.
 

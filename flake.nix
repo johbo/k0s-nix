@@ -29,8 +29,16 @@
       ];
       allSystems = k0sSystems ++ darwinSystems;
       forAllK0sSystems = lib.genAttrs k0sSystems;
+
+      movedNotice = ''
+        k0s-nix has moved to the nix-community organization. This is a
+        personal fork, carrying the project as it stood at the move.
+        Change your flake input to:
+
+          inputs.k0s-nix.url = "github:nix-community/k0s-nix";
+      '';
     in
-    {
+    lib.warn movedNotice {
       packages = forAllK0sSystems (
         system:
         let
