@@ -74,6 +74,24 @@ e.g. in their `flake.nix` file, like so:
 }
 ```
 
+### Breaking changes
+
+Since there are no releases, changes that need attention when moving a pin forward are noted here.
+
+**2026-08-20, merge commit `63278bd`: the systemd unit is called `k0s` for every role.**
+
+Before this the unit was `k0scontroller` on a controller and `k0sworker` on a worker.
+Both are now `k0s`, whatever `services.k0s.role` is set to.
+Anything naming the old units has to be updated: `systemctl` invocations, monitoring checks,
+and `systemd` drop-ins or ordering dependencies declared in your own configuration.
+A `systemd.services.k0scontroller` override in particular no longer reaches the unit, and does not fail.
+
+The switch itself needs no manual step.
+`switch-to-configuration` stops the old unit before it starts `k0s.service`,
+and neither `containerd` nor `kubelet` survives from the old one;
+the switch test on the `unit-rename-evidence` tag covers this.
+The k0s process does restart, so the node is briefly unavailable.
+
 ## Development and alternatives
 
 Check out the folder [`docs`](./docs). It contains further notes about thoughts
