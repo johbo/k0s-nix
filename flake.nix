@@ -88,6 +88,10 @@
         )
         // {
           option-types = import ./checks/types.nix { inherit lib pkgs; };
+          option-docs = import ./checks/docs.nix {
+            inherit nixpkgs pkgs;
+            module = self.nixosModules.default;
+          };
         }
       );
 
