@@ -18,13 +18,15 @@ in
       type = bool;
     };
     components = mkOption {
-      type = nullOr listOf enum [
-        "kube-apiserver"
-        "kube-controller-manager"
-        "kubelet"
-        "kube-scheduler"
-        "kube-proxy"
-      ];
+      type = nullOr (
+        listOf (enum [
+          "kube-apiserver"
+          "kube-controller-manager"
+          "kubelet"
+          "kube-scheduler"
+          "kube-proxy"
+        ])
+      );
       default = null;
     };
   };
