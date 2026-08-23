@@ -98,6 +98,7 @@
         // {
           option-types = import ./checks/types.nix { inherit lib pkgs; };
           option-docs = self.packages.${system}.option-docs;
+          embedded-bins = import ./checks/embedded-bins.nix { inherit lib pkgs; };
         }
       );
 
