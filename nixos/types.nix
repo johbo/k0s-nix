@@ -173,18 +173,34 @@ let
         && (isValidIpV6Brackets host || isValidIpV4 host || isValidDnsName host);
 in
 rec {
-  ipV4 = addCheck str isValidIpV4;
-  ipV6 = addCheck str isValidIpV6;
+  ipV4 = addCheck str isValidIpV4 // {
+    description = "IPv4 address";
+  };
+  ipV6 = addCheck str isValidIpV6 // {
+    description = "IPv6 address";
+  };
   ip = either ipV4 ipV6;
-  dnsName = addCheck str isValidDnsName;
+  dnsName = addCheck str isValidDnsName // {
+    description = "DNS name";
+  };
   ipOrDnsName = either ip dnsName;
-  cidrV4 = addCheck str isValidCidrV4;
-  cidrV6 = addCheck str isValidCidrV6;
+  cidrV4 = addCheck str isValidCidrV4 // {
+    description = "IPv4 CIDR";
+  };
+  cidrV6 = addCheck str isValidCidrV6 // {
+    description = "IPv6 CIDR";
+  };
   cidr = either cidrV4 cidrV6;
-  ipV4WithPort = addCheck str isValidIpV4WithPort;
-  ipV6WithPort = addCheck str isValidIpV6WithPort;
+  ipV4WithPort = addCheck str isValidIpV4WithPort // {
+    description = "IPv4 address with port";
+  };
+  ipV6WithPort = addCheck str isValidIpV6WithPort // {
+    description = "IPv6 address with port";
+  };
   ipWithPort = either ipV4WithPort ipV6WithPort;
-  etcdEndpoint = addCheck str isValidEtcdEndpoint;
+  etcdEndpoint = addCheck str isValidEtcdEndpoint // {
+    description = "etcd endpoint URL";
+  };
   emptyOrPath = either (enum [ "" ]) path;
   image = submodule {
     options = {
