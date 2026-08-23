@@ -27,7 +27,7 @@ K0S_DIR = HERE.parent
 K0S_ARCHIVE = "https://github.com/k0sproject/k0s/archive/refs/tags/v{}.tar.gz"
 
 
-def update(minor):
+def update(minor: str) -> None:
     version = read_version(K0S_DIR / f"{minor}.nix")
     known = read_hashes(HERE / f"{minor}.json")
 
@@ -46,23 +46,23 @@ def update(minor):
 
 # A git source is fetched as its forge's tag archive rather than cloned,
 # so the hash is one fetchzip can use.
-def archive_url(component):
+def archive_url(component: dict) -> str:
     if "source_tag" not in component:
         return component["source_url"]
     repository = component["source_url"].removesuffix(".git")
     return f"{repository}/archive/refs/tags/{component['source_tag']}.tar.gz"
 
 
-def fetch_entry(name, url, unpack, known):
+def fetch_entry(name: str, url: str, unpack: bool, known: dict[str, str]) -> dict:
     _, hash_ = prefetch(url, unpack, known)
     return entry(name, url, unpack, hash_)
 
 
-def entry(name, url, unpack, hash_):
+def entry(name: str, url: str, unpack: bool, hash_: str) -> dict:
     return {"name": name, "url": url, "unpack": unpack, "hash": hash_}
 
 
-def prefetch(url, unpack, known):
+def prefetch(url: str, unpack: bool, known: dict[str, str]) -> tuple[str, str]:
     command = ["nix-prefetch-url", "--print-path", "--quiet"]
     if unpack:
         command.append("--unpack")
@@ -75,32 +75,32 @@ def prefetch(url, unpack, known):
     return output[1], known.get(url) or to_sri(output[0])
 
 
-def read_version(path):
+def read_version(path: Path) -> str:
     match = re.search(r'version\s*=\s*"([^"]+)"', path.read_text())
     if not match:
         sys.exit(f"no version in {path}")
     return match.group(1)
 
 
-def read_hashes(path):
+def read_hashes(path: Path) -> dict[str, str]:
     if not path.exists():
         return {}
     return {item["url"]: item["hash"] for item in json.loads(path.read_text())["fetch"]}
 
 
-def to_sri(base32):
+def to_sri(base32: str) -> str:
     return run(["nix", "hash", "to-sri", "--type", "sha256", base32]).strip()
 
 
-def to_base32(sri):
+def to_base32(sri: str) -> str:
     return run(["nix", "hash", "to-base32", sri]).strip()
 
 
-def run(command):
+def run(command: list[str]) -> str:
     return subprocess.run(command, capture_output=True, text=True, check=True).stdout
 
 
-def write(path, data):
+def write(path: Path, data: dict) -> None:
     path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
     print(f"wrote {path.name}", file=sys.stderr)
 

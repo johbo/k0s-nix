@@ -63,6 +63,7 @@ pkgs.runCommand "k0s-embedded-bins-extraction"
 
     # The guards are what make an update stop rather than silently drop
     # something upstream added, so they are exercised rather than trusted.
+    # One source serves: the known sets are shared across the minors.
     reference=${source (lib.last minors)}
     work=$(mktemp -d)
 

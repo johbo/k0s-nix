@@ -47,7 +47,7 @@ SOURCE_HOSTS = {"github.com", "www.netfilter.org", "www.keepalived.org"}
 EXTRACT_MK = Path(__file__).resolve().parent / "extract.mk"
 
 
-def extract(source_dir):
+def extract(source_dir: Path) -> dict:
     embedded_bins = source_dir / "embedded-bins"
     makefile = (embedded_bins / "Makefile").read_text()
     variables = read_variables(embedded_bins)
@@ -74,7 +74,7 @@ def extract(source_dir):
     }
 
 
-def component(name, variables, dockerfile):
+def component(name: str, variables: dict[str, str], dockerfile: str) -> dict:
     prefix = f"{name}_"
     pins = arg_pins(dockerfile)
     values = {key[len(prefix):]: unquote(value)
@@ -89,7 +89,7 @@ def component(name, variables, dockerfile):
 # or downloaded as a tarball, and some carry more alongside - runc pulls
 # libseccomp, and containerd carried an upstream patch until 1.36. Every
 # variable is substituted so the URLs stand on their own.
-def sources(name, dockerfile, version, pins):
+def sources(name: str, dockerfile: str, version: str, pins: dict[str, str]) -> dict:
     substitutions = {"$VERSION": version}
     substitutions.update({f"${pin}": pinned for pin, pinned in pins.items()})
 
@@ -114,23 +114,25 @@ def sources(name, dockerfile, version, pins):
 
 
 # A fetch is regularly spread over several lines joined by a backslash.
-def logical_lines(text):
+def logical_lines(text: str) -> list[str]:
     return re.sub(r"\\\n\s*", " ", text).splitlines()
 
 
-def substitute(text, substitutions):
-    for name, value in substitutions.items():
-        text = text.replace(name, value)
+# Longest name first, so a pin whose name contains another's cannot be
+# half-substituted.
+def substitute(text: str, substitutions: dict[str, str]) -> str:
+    for name in sorted(substitutions, key=len, reverse=True):
+        text = text.replace(name, substitutions[name])
     return text
 
 
-def guard(found, known, message):
+def guard(found, known, message: str) -> None:
     unknown = sorted(set(found) - set(known))
     if unknown:
         sys.exit(f"{message}: {' '.join(unknown)}")
 
 
-def read_variables(embedded_bins):
+def read_variables(embedded_bins: Path) -> dict[str, str]:
     output = subprocess.run(
         ["make", "--silent", "-C", str(embedded_bins),
          "-f", "Makefile", "-f", str(EXTRACT_MK), "extract"],
@@ -140,21 +142,26 @@ def read_variables(embedded_bins):
 
 # The per-component build arguments are the ones derived through patsubst;
 # what is left is passed to every component alike.
-def shared_build_args(makefile):
+def shared_build_args(makefile: str) -> list[str]:
     lines = [line for line in makefile.splitlines()
              if "--build-arg" in line and "patsubst" not in line]
     return re.findall(r"--build-arg ([A-Z_]+)=", "\n".join(lines))
 
 
-def arg_pins(text):
-    return dict(re.findall(r"^ARG ([A-Z_]+)=(.*)$", text, re.MULTILINE))
+# An ARG declares several names across continued lines, and a default may
+# sit on any of them, so the whole logical line is searched rather than its
+# first name.
+def arg_pins(text: str) -> dict[str, str]:
+    return dict(pin
+                for line in logical_lines(text) if line.startswith("ARG ")
+                for pin in re.findall(r"([A-Z_]+)=(\S*)", line))
 
 
-def pin_set(pins):
+def pin_set(pins: dict[str, str]) -> set[str]:
     return {f"{name}={value}" for name, value in pins.items()}
 
 
-def unquote(value):
+def unquote(value: str) -> str:
     return value[1:-1] if value.startswith('"') and value.endswith('"') else value
 
 
