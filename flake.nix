@@ -86,6 +86,9 @@
             };
           }
         )
+        // {
+          option-types = import ./checks/types.nix { inherit lib pkgs; };
+        }
       );
 
     };
