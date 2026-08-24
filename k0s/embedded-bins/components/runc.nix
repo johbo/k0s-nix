@@ -11,7 +11,7 @@ let
   # k0s pins libseccomp in runc's Dockerfile rather than in
   # Makefile.variables, so it moves independently of the nixpkgs package and
   # has to be pinned here to be honoured at all.
-  seccomp = libseccomp.overrideAttrs (_: {
+  pinnedLibseccomp = libseccomp.overrideAttrs (_: {
     version = component.argpin_LIBSECCOMP_VERSION;
     src = fetchurl { inherit (sources.libseccomp) url hash; };
   });
@@ -25,7 +25,7 @@ let
     assert component.build_go_ldflags_extra == staticLinking;
     component.build_go_ldflags;
 in
-(runc.override { libseccomp = seccomp; }).overrideAttrs (_: {
+(runc.override { libseccomp = pinnedLibseccomp; }).overrideAttrs (_: {
   inherit (component) version;
 
   src = fetchFromGitHub {
