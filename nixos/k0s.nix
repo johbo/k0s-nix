@@ -155,7 +155,9 @@ in
         depend on it.
 
         It runs the packaged k0s binary, so it needs a builder that can
-        execute it.
+        execute it, and it runs under Nix's sandbox. Configuration that
+        k0s checks against the host it runs on cannot be validated
+        there.
       '';
       type = package;
       readOnly = true;
