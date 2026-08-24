@@ -11,16 +11,43 @@ let
     mkRemovedOptionModule
     mkOption
     mkIf
+    literalMD
     optionalString
     concatMapAttrs
     ;
   inherit (lib.types)
+    bool
     str
     enum
+    package
     path
     submodule
     ;
   cfg = config.services.k0s;
+
+  generatedConfig = (pkgs.formats.yaml { }).generate "k0s.yaml" {
+    apiVersion = "k0s.k0sproject.io/v1beta1";
+    kind = "Cluster";
+    metadata = {
+      name = cfg.clusterName;
+    };
+    inherit (cfg) spec;
+  };
+
+  validatedConfig =
+    pkgs.runCommand "k0s.yaml-validated"
+      {
+        preferLocalBuild = true;
+      }
+      ''
+        ln -s ${cfg.configFile} $out
+        ${cfg.package}/bin/k0s config validate --config $out
+      '';
+
+  canValidate = pkgs.stdenv.buildPlatform.canExecute pkgs.stdenv.hostPlatform;
+
+  deployedConfig =
+    if cfg.validateConfig && canValidate then cfg.validatedConfigFile else cfg.configFile;
 in
 {
   imports = [
@@ -107,6 +134,50 @@ in
       default = "";
       type = str;
     };
+
+    configFile = mkOption {
+      description = ''
+        The generated k0s configuration, as it is placed in
+        `/etc/k0s/k0s.yaml`. Build this to read what the module makes
+        of the options set on it.
+      '';
+      type = package;
+      readOnly = true;
+      default = generatedConfig;
+      defaultText = literalMD "the configuration generated from {option}`services.k0s.spec`";
+    };
+
+    validatedConfigFile = mkOption {
+      description = ''
+        {option}`services.k0s.configFile` with `k0s config validate`
+        run over it while building. Build this attribute to get the
+        validation result on its own, without making the system build
+        depend on it.
+
+        It runs the packaged k0s binary, so it needs a builder that can
+        execute it.
+      '';
+      type = package;
+      readOnly = true;
+      default = validatedConfig;
+      defaultText = literalMD "{option}`services.k0s.configFile`, validated";
+    };
+
+    validateConfig = mkOption {
+      description = ''
+        Whether the system build depends on
+        {option}`services.k0s.validatedConfigFile`, so that an invalid
+        configuration fails the build instead of the node.
+
+        Off by default: it runs the packaged k0s binary on the builder,
+        and ties every build to the rules of one k0s version. It is
+        skipped where the builder cannot execute the binary, which is
+        why {option}`services.k0s.validatedConfigFile` stays the way to
+        ask for an answer rather than a default.
+      '';
+      type = bool;
+      default = false;
+    };
   };
 
   config =
@@ -117,14 +188,6 @@ in
       isLeader = (cfg.role == "single") || (cfg.controller.isLeader or false);
       requireJoinToken = isWorker || (!isLeader && !isExternalEtcd);
       unitName = "k0s";
-      configFile = (pkgs.formats.yaml { }).generate "k0s.yaml" {
-        apiVersion = "k0s.k0sproject.io/v1beta1";
-        kind = "Cluster";
-        metadata = {
-          name = cfg.clusterName;
-        };
-        inherit (cfg) spec;
-      };
       forbiddenArgs = [
         "--data-dir"
         "--config"
@@ -142,7 +205,7 @@ in
         }
       ];
 
-      environment.etc."k0s/k0s.yaml".source = configFile;
+      environment.etc."k0s/k0s.yaml".source = deployedConfig;
 
       systemd.services.${unitName} = {
         description = "k0s - Zero Friction Kubernetes";
@@ -168,7 +231,7 @@ in
           Restart = "always";
           ExecStart =
             "${cfg.package}/bin/k0s ${subcommand} --data-dir=${cfg.dataDir}"
-            + optionalString (cfg.role != "worker") " --config=${configFile}"
+            + optionalString (cfg.role != "worker") " --config=${deployedConfig}"
             + optionalString (cfg.role == "single") " --single"
             + optionalString (cfg.role == "controller+worker") " --enable-worker --no-taints"
             + optionalString requireJoinToken " --token-file=${cfg.tokenFile}"
