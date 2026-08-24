@@ -28,6 +28,28 @@ nix build .#nixosConfigurations.test.config.system.build.toplevel
 Inspect the result in `./result`.
 
 
+### Validate the generated configuration
+
+The module renders `/etc/k0s/k0s.yaml` from `services.k0s.spec`. Build
+`validatedConfigFile` in your own flake to have `k0s config validate` run
+over the result:
+
+```sh
+nix build .#nixosConfigurations.<host>.config.services.k0s.validatedConfigFile
+```
+
+The option types reject a malformed value, and k0s reports the combinations
+they cannot see:
+
+```
+Error: spec: network: calico.mode: Forbidden: dual-stack for calico is only supported for mode `bird`
+```
+
+Set `services.k0s.validateConfig = true` to make the system build depend on
+it. It is off by default: it runs the packaged `k0s` binary on the builder,
+and ties every build to one k0s version's rules.
+
+
 ### Token handling to join the cluster
 
 `k0s` uses a token to join the cluster. The token has to be placed into

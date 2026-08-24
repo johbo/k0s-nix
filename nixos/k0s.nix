@@ -172,9 +172,7 @@ in
 
         Off by default: it runs the packaged k0s binary on the builder,
         and ties every build to the rules of one k0s version. It is
-        skipped where the builder cannot execute the binary, which is
-        why {option}`services.k0s.validatedConfigFile` stays the way to
-        ask for an answer rather than a default.
+        skipped silently where the builder cannot execute that binary.
       '';
       type = bool;
       default = false;
