@@ -9,10 +9,10 @@ let
   base = {
     services.k0s = {
       enable = true;
+      inherit package;
       role = lib.mkDefault "single";
       spec.api.address = "10.0.0.1";
     };
-    services.k0s.package = package;
   };
 
   cases = {
