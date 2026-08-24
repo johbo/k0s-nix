@@ -1,10 +1,9 @@
 {
   lib,
-  config,
   ...
 }@args:
 let
-  inherit (lib) mkEnableOption mkOption optionalAttrs;
+  inherit (lib) mkEnableOption mkOption;
   inherit (lib.types)
     str
     enum
@@ -28,7 +27,7 @@ in
       default = "Keepalived";
     };
 
-    keepalived = optionalAttrs (config.enabled && config.type == "Keepalived") (mkOption {
+    keepalived = mkOption {
       description = ''
         Contains configuration options related to the "Keepalived" type of load balancing.
       '';
@@ -162,6 +161,6 @@ in
         };
       };
       default = { };
-    });
+    };
   };
 }
