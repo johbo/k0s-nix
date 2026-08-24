@@ -1,14 +1,66 @@
 # embedded-bins
 
-A k0s release binary is `k0s.bare` with a zip of thirteen component
-binaries appended to it. Upstream builds each component in its own
-container image, from the versions and build parameters in
+A k0s release binary is `k0s.bare` with a payload of component binaries
+carried behind it. Upstream builds each component in its own container
+image, from the versions and build parameters in
 `embedded-bins/Makefile.variables`. This directory reads those pins so a
 payload can be built from source here.
 
 Nothing in this directory is on a consumer's build path yet. It supplies
 the component derivations that are being built up, reachable through the
 checks until the payload decides their public surface.
+
+## The payload mechanism differs by minor
+
+There are two of them, and which one a minor uses decides how the
+payload is assembled.
+
+- **1.36** appends a zip. `hack/zip-files` writes it, `cat` puts it
+  behind `k0s.bare`, and `pkg/assets/stage.go` opens the running
+  executable with `zip.OpenReader`, matching an entry by the plain
+  binary name. A zip's index sits at its end, so both formats stay
+  readable. The Go build knows nothing about the payload, which is what
+  makes `k0s.bare` reusable: a component can move into the archive
+  without rebuilding k0s.
+- **1.33 to 1.35** compile an index in. `hack/gen-bindata` gzips each
+  staged binary into one `bindata_linux` blob and generates
+  `pkg/assets/zz_generated_offsets_linux.go`, an offset and size table
+  that is compiled into the binary before the blob is appended. So the
+  Go build depends on the components, and moving one into the payload
+  rebuilds k0s.
+
+`EMBEDDED_BINS_BUILDMODE=none` covers both: at 1.36 the `cat` is
+skipped, and below it the `noembedbins` build tag selects the empty
+`pkg/assets/offsets_other.go` stub instead of the generated table.
+Without that tag a payload-less build below 1.36 does not compile at
+all.
+
+## The source build
+
+`../source.nix` builds `k0s.bare` itself, one derivation per minor,
+against the k0s source each minor's JSON already pins under the name
+`k0s`. It carries no payload: the components are being built up
+separately, and nothing from nixpkgs is put on `PATH` to stand in for
+the archive, because that would run a combination upstream never ships.
+`checks/source-build.nix` is what proves it, diffing `k0s version
+--json` against the pins the binary was stamped from.
+
+It needs no codegen phase. The Makefile regenerates deepcopy functions,
+CRDs and the clientset before every build, but only because the stamp
+files it uses as targets are untracked - the generated sources
+themselves are committed, and each generator runs through `go run
+<tool>@<version>`, which wants the network.
+
+**`CGO_ENABLED` is per minor, and it is not in `Makefile.variables`.**
+The Makefile sets it on the `k0s` target itself: 1 at 1.33 and 1.34, 0
+at 1.35 and 1.36. Below 1.35 `pkg/backup` reaches
+`github.com/rqlite/rqlite/db` behind nothing but a `unix` build
+constraint, and rqlite needs the real `mattn/go-sqlite3`, which without
+cgo compiles to a stub carrying none of the methods it calls. 1.36
+dropped rqlite altogether. This is the same trap as runc's libseccomp
+`ARG` - a build parameter living outside the file the extractor reads -
+except that this one is a per-target `make` variable rather than a
+Dockerfile `ARG`, so the guards do not cover it.
 
 ## The component derivations
 
