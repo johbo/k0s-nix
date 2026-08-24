@@ -10,9 +10,9 @@ let
 
   fetch =
     minor: name:
-    lib.findFirst (entry: entry.name == name)
-      (throw "${minor}.json records no source named ${name}")
-      (read minor).fetch;
+    lib.findFirst (
+      entry: entry.name == name
+    ) (throw "${minor}.json records no source named ${name}") (read minor).fetch;
 in
 {
   inherit minors read fetch;
