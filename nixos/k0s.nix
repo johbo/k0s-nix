@@ -32,7 +32,7 @@ in
   ];
 
   options.services.k0s = {
-    enable = mkEnableOption (lib.mdDoc "Enable the k0s Kubernetes distribution.");
+    enable = mkEnableOption "the k0s Kubernetes distribution";
 
     package = mkPackageOption pkgs "k0s" { };
 
