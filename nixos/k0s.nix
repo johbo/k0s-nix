@@ -76,24 +76,22 @@ in
       default = "single";
     };
 
-    controller = lib.optionalAttrs (cfg.role == "controller" || cfg.role == "controller+worker") (
-      lib.mkOption {
-        description = ''
-          Controller specific configuration
-        '';
-        type = submodule {
-          options = {
-            isLeader = lib.mkOption {
-              description = ''
-                The leader is used to generate the join tokens.
-              '';
-              default = false;
-            };
+    controller = mkOption {
+      description = ''
+        Controller specific configuration
+      '';
+      type = submodule {
+        options = {
+          isLeader = mkOption {
+            description = ''
+              The leader is used to generate the join tokens.
+            '';
+            default = false;
           };
         };
-        default = { };
-      }
-    );
+      };
+      default = { };
+    };
 
     dataDir = mkOption {
       description = ''
@@ -187,7 +185,7 @@ in
       subcommand = if (cfg.role == "worker") then "worker" else "controller";
       isExternalEtcd = cfg.spec.storage.type == "etcd" && cfg.spec.storage.etcd.externalCluster != null;
       isWorker = cfg.role == "worker";
-      isLeader = (cfg.role == "single") || (cfg.controller.isLeader or false);
+      isLeader = (cfg.role == "single") || cfg.controller.isLeader;
       requireJoinToken = isWorker || (!isLeader && !isExternalEtcd);
       unitName = "k0s";
       forbiddenArgs = [
