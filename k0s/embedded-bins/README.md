@@ -7,7 +7,40 @@ container image, from the versions and build parameters in
 payload can be built from source here.
 
 Nothing in this directory is on a consumer's build path yet. It supplies
-the component derivations that are being built up.
+the component derivations that are being built up, reachable through the
+checks until the payload decides their public surface.
+
+## The component derivations
+
+`components/` holds one derivation per payload binary, keyed by minor:
+`components/default.nix` turns a minor's JSON into the arguments each
+component takes, so a component file knows the pins it needs and nothing
+about the file they came from. `pins.nix` is the reader both it and
+`checks/embedded-bins.nix` use.
+
+A component overrides the nixpkgs package rather than reproducing
+upstream's Dockerfile. nixpkgs already carries the build knowledge - its
+`runc` sets `BUILDTAGS+=seccomp` and takes `libseccomp` as an argument -
+so what the override adds is k0s's version, its linker flags and its
+libseccomp pin.
+
+Two deliberate deviations from upstream, both asserted by
+`checks/embedded-bins-runc.nix` rather than left to trust:
+
+- **Dynamic linking.** `build_go_ldflags_extra` is `-extldflags=-static`
+  for every Go component and every minor, and it is not reproduced.
+  nixpkgs ships no static `libc`, `libseccomp` or `libresolv`, and the
+  payload is extracted onto a node whose store already holds what the
+  binary links against. A component asserts that the field holds nothing
+  but the static flag, so a pin this would otherwise drop stops the
+  build.
+- **No wrapper.** nixpkgs wraps `runc` to prepend
+  `/run/current-system/systemd/bin` to `PATH`. A payload binary that
+  execs a store path defeats the point of vendoring it, and k0s prepends
+  its own bin directory to the `PATH` of what it supervises.
+
+The Go toolchain is nixpkgs' rather than the `go_version` upstream pins,
+which is not yet a considered decision.
 
 ## The generated files
 
