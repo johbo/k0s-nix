@@ -95,6 +95,16 @@
             };
           }
         )
+        // builtins.listToAttrs (
+          map (version: {
+            name = "${version}_config-validate";
+            value = import ./checks/config.nix {
+              inherit lib pkgs nixpkgs;
+              module = self.nixosModules.default;
+              package = self.packages.${system}.${version};
+            };
+          }) versions
+        )
         // {
           option-types = import ./checks/types.nix { inherit lib pkgs; };
           option-docs = self.packages.${system}.option-docs;
