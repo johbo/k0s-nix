@@ -1,6 +1,5 @@
 {
   lib,
-  config,
   ...
 }@args:
 let
@@ -23,12 +22,13 @@ in
       default = true;
     };
 
-    mtu = util.mkOptionMandatoryIf (!config.autoMTU) {
+    mtu = mkOption {
       description = ''
         Override MTU setting, if `autoMTU` must be set to `false`).
       '';
       type = ints.unsigned;
-    } 0;
+      default = 0;
+    };
 
     metricsPort = mkOption {
       description = ''
