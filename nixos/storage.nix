@@ -1,11 +1,10 @@
 {
   lib,
-  config,
   dataDir,
   ...
 }@args:
 let
-  inherit (lib) mkOption optionalAttrs;
+  inherit (lib) mkOption;
   inherit (lib.types)
     str
     enum
@@ -31,7 +30,7 @@ in
       default = "etcd";
     };
 
-    etcd = optionalAttrs (config.type == "etcd") {
+    etcd = {
       peerAddress = mkOption {
         description = ''
           Node address used for etcd cluster peering.
@@ -103,7 +102,7 @@ in
       };
     };
 
-    kine = optionalAttrs (config.type == "kine") {
+    kine = {
       dataSource = mkOption {
         description = ''
           [kine](https://github.com/k3s-io/kine) datasource URL.
