@@ -1,12 +1,10 @@
 {
   lib,
-  config,
   ...
 }@args:
 let
-  inherit (lib) mkEnableOption mkOption optionalAttrs;
-  inherit (lib.types) str enum submodule;
-  util = import ./util.nix args;
+  inherit (lib) mkEnableOption mkOption;
+  inherit (lib.types) enum submodule;
   customTypes = import ./types.nix args;
 in
 {
@@ -52,41 +50,40 @@ in
       default = "cluster.local";
     };
 
-    kuberouter = optionalAttrs (config.provider == "kuberouter") (mkOption {
+    kuberouter = mkOption {
       description = "Options for the `kuberouter` network provider.";
       type = submodule (import ./kuberouter.nix);
       default = { };
-    });
+    };
 
-    calico = optionalAttrs (config.provider == "calico") (mkOption {
+    calico = mkOption {
       description = "Options for the `calico` network provider.";
       type = submodule (import ./calico.nix);
       default = { };
-    });
+    };
 
-    dualStack =
-      optionalAttrs
-        (config.provider == "kuberouter" || (config.provider == "calico" && config.calico.mode == "bird"))
-        {
-          enabled = mkEnableOption ''
-            Defines whether or not IPv4/IPv6 dual-stack networking should be enabled.
-            With Calico, dual stack only works in bird mode.
-          '';
+    dualStack = {
+      enabled = mkEnableOption ''
+        Defines whether or not IPv4/IPv6 dual-stack networking should be enabled.
+        With Calico, dual stack only works in bird mode.
+      '';
 
-          IPv6podCIDR = util.mkOptionMandatoryIf config.dualStack.enabled {
-            description = ''
-              IPv6 Pod network CIDR to use in the cluster.
-            '';
-            type = if config.dualStack.enabled then customTypes.cidrV6 else str;
-          } "";
+      IPv6podCIDR = mkOption {
+        description = ''
+          IPv6 Pod network CIDR to use in the cluster.
+        '';
+        type = customTypes.emptyOrCidrV6;
+        default = "";
+      };
 
-          IPv6serviceCIDR = util.mkOptionMandatoryIf config.dualStack.enabled {
-            description = ''
-              IPv6 Network CIDR to use for cluster VIP services.
-            '';
-            type = if config.dualStack.enabled then customTypes.cidrV6 else str;
-          } "";
-        };
+      IPv6serviceCIDR = mkOption {
+        description = ''
+          IPv6 Network CIDR to use for cluster VIP services.
+        '';
+        type = customTypes.emptyOrCidrV6;
+        default = "";
+      };
+    };
 
     kubeProxy = mkOption {
       description = "Defines the configuration for kube-proxy.";
