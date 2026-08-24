@@ -41,7 +41,7 @@
 
       overlays.default = final: prev: genPackages prev;
 
-      nixosModules.default = import ./nixos/k0s.nix;
+      nixosModules.default = ./nixos/k0s.nix;
 
       formatter = (lib.genAttrs allSystems) (system: nixpkgs.legacyPackages.${system}.nixfmt-tree);
 
