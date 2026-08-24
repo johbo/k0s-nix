@@ -37,6 +37,12 @@
           pkgs = nixpkgs.legacyPackages.${system};
         in
         genPackages pkgs
+        // {
+          option-docs = import ./docs/options.nix {
+            inherit nixpkgs pkgs;
+            module = self.nixosModules.default;
+          };
+        }
       );
 
       overlays.default = final: prev: genPackages prev;
@@ -49,7 +55,7 @@
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          versions = builtins.filter (name: name != "k0s") (builtins.attrNames self.packages.${system});
+          versions = builtins.filter (lib.hasPrefix "k0s_") (builtins.attrNames self.packages.${system});
           tests = map (name: lib.strings.removeSuffix ".nix" name) (
             builtins.attrNames (builtins.readDir ./tests)
           );
@@ -88,10 +94,7 @@
         )
         // {
           option-types = import ./checks/types.nix { inherit lib pkgs; };
-          option-docs = import ./checks/docs.nix {
-            inherit nixpkgs pkgs;
-            module = self.nixosModules.default;
-          };
+          option-docs = self.packages.${system}.option-docs;
         }
       );
 

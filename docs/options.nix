@@ -7,7 +7,8 @@ let
   inherit (pkgs) lib;
 
   sourceRoot = "${toString ../.}/";
-  repository = "https://github.com/nix-community/k0s-nix/blob/main";
+  revision = "main";
+  repository = "https://github.com/nix-community/k0s-nix/blob/${revision}";
 
   linkToRepository =
     declaration:
@@ -44,5 +45,25 @@ let
     # TODO: Drop this once every option carries a description
     warningsAreErrors = false;
   };
+
+  manual = pkgs.writeText "manual.md" ''
+    # k0s-nix module options {#book-k0s-nix-options}
+    ## Reference for the `services.k0s` NixOS module
+
+    ```{=include=} options
+    id-prefix: opt-
+    list-id: configuration-variable-list
+    source: ${doc.optionsJSON}/share/doc/nixos/options.json
+    ```
+  '';
 in
-doc.optionsCommonMark
+pkgs.runCommand "k0s-nix-option-docs" { nativeBuildInputs = [ pkgs.nixos-render-docs ]; } ''
+  mkdir $out
+  cp ${pkgs.path}/doc/style.css $out/style.css
+  nixos-render-docs manual html \
+    --manpage-urls ${pkgs.path}/doc/manpage-urls.json \
+    --revision ${revision} \
+    --stylesheet style.css \
+    ${manual} \
+    $out/index.html
+''
