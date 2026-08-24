@@ -1,20 +1,10 @@
 { lib, pkgs }:
 let
   extractor = ../k0s/embedded-bins;
-  minors = lib.pipe (builtins.readDir extractor) [
-    (lib.filterAttrs (name: _: lib.hasSuffix ".json" name))
-    builtins.attrNames
-    (map (lib.removeSuffix ".json"))
-  ];
+  pins = import (extractor + "/pins.nix") { inherit lib; };
+  inherit (pins) minors;
 
-  data = minor: builtins.fromJSON (builtins.readFile (extractor + "/${minor}.json"));
-
-  source =
-    minor:
-    let
-      k0s = lib.findFirst (entry: entry.name == "k0s") null (data minor).fetch;
-    in
-    pkgs.fetchzip { inherit (k0s) url hash; };
+  source = minor: pkgs.fetchzip { inherit (pins.fetch minor "k0s") url hash; };
 
   # The release-binary package and the source data are updated by separate
   # scripts on purpose, so the version they each name has to be compared
@@ -22,7 +12,7 @@ let
   manifest = map (minor: {
     inherit minor;
     source = source minor;
-    recorded = (data minor).k0sVersion;
+    recorded = (pins.read minor).k0sVersion;
     declared = (import (../k0s + "/${minor}.nix")).version;
   }) minors;
 in
