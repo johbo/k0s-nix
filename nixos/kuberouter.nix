@@ -24,7 +24,7 @@ in
 
     mtu = mkOption {
       description = ''
-        Override MTU setting, if `autoMTU` must be set to `false`).
+        Override MTU setting. Requires `autoMTU` to be set to `false`.
       '';
       type = ints.unsigned;
       default = 0;
