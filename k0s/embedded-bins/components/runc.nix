@@ -16,14 +16,7 @@ let
     src = fetchurl { inherit (sources.libseccomp) url hash; };
   });
 
-  # Upstream's build_go_ldflags_extra carries static linking and nothing else,
-  # for every Go component and every minor. It is deliberately not reproduced,
-  # so anything else appearing there would be a pin this build drops without
-  # saying so.
-  staticLinking = "-extldflags=-static";
-  ldflags =
-    assert component.build_go_ldflags_extra == staticLinking;
-    component.build_go_ldflags;
+  ldflags = import ./go-ldflags.nix component;
 in
 (runc.override { libseccomp = pinnedLibseccomp; }).overrideAttrs (_: {
   inherit (component) version;
