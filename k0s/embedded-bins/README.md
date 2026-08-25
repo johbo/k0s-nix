@@ -267,6 +267,8 @@ copy of the source three ways and asserts each one is refused.
   tags, linker flags. Not the mechanics.
 - `payloadBinaries` is upstream's own list and it moves: fifteen entries
   at 1.33, thirteen at 1.36.
+- Not every `--build-arg` comes from the suffix scheme. `CONTAINERD_BINS`
+  is fed from a plain `Makefile` variable, so the guards do not cover it.
 - `extra_urls` carries what a component fetches besides its own source -
   libseccomp for runc, and an upstream patch for containerd at 1.34 and
   1.35 which 1.36 no longer needs.
