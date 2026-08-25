@@ -15,6 +15,7 @@ let
     inherit minor k0s;
     inherit (k0s) payload;
     runc = components.${minor}.runc;
+    components = lib.attrValues components.${minor};
     k0sVersion = (pins.read minor).k0sVersion;
     mechanism = mechanismFor minor;
   }) sourceBuilds.withPayload;
@@ -49,6 +50,14 @@ pkgs.runCommand "k0s-embedded-bins-payload"
     ];
     passAsFile = [ "manifest" ];
     manifest = builtins.toJSON manifest;
+
+    # The payload is compressed inside the binary, so nothing in the output
+    # spells a component's store path where the reference scanner would find
+    # it. Only the store's own graph settles whether the closure holds them.
+    exportReferencesGraph = lib.concatMap (entry: [
+      "closure-${entry.minor}"
+      entry.k0s
+    ]) manifest;
   }
   ''
     set -o pipefail
@@ -56,6 +65,14 @@ pkgs.runCommand "k0s-embedded-bins-payload"
 
     while read -r entry; do
       eval "$(jq -r '@sh "minor=\(.minor) k0s=\(.k0s) runc=\(.runc) k0sVersion=\(.k0sVersion) payload=\(.payload) mechanism=\(.mechanism)"' <<<"$entry")"
+      eval "components=($(jq -r '@sh "\(.components)"' <<<"$entry"))"
+
+      for component in "''${components[@]}"; do
+        if ! grep -qxF "$component" "closure-$minor"; then
+          echo "$minor: $component is outside the k0s closure, so a collection takes it" >&2
+          failed=1
+        fi
+      done
 
       # Appending a zip behind an ELF either works or leaves an executable that
       # no longer runs, so the binary is asked first.
