@@ -3,6 +3,7 @@
   buildGoModule,
   fetchzip,
   makeWrapper,
+  runCommand,
   util-linuxMinimal,
 }:
 let
@@ -39,7 +40,7 @@ let
   buildPkg = "github.com/k0sproject/k0s/pkg/build";
   componentBase = "k8s.io/component-base/version";
 
-  forMinor =
+  buildK0s =
     minor:
     let
       pin = pins.read minor;
@@ -107,18 +108,6 @@ let
       # and checks/source-build.nix asserts that instead.
       doCheck = false;
 
-      nativeBuildInputs = [ makeWrapper ];
-
-      # util-linux is a host tool k0s expects to find rather than something it
-      # carries, so it stays on PATH once the payload is complete. No payload
-      # component is put here to stand in for the archive: this binary carries
-      # no payload yet, and staging one out of nixpkgs would run a combination
-      # nobody ships.
-      postInstall = ''
-        wrapProgram $out/bin/k0s \
-          --prefix PATH : ${lib.makeBinPath [ util-linuxMinimal ]}
-      '';
-
       meta = {
         description = "k0s - The Zero Friction Kubernetes, built from source";
         homepage = "https://k0sproject.io";
@@ -127,5 +116,26 @@ let
         platforms = lib.platforms.linux;
       };
     };
+
+  # k0s reads its payload out of its own executable, which a wrapper is not:
+  # os.Executable() resolves to whatever the wrapper execs. So the real binary
+  # sits at libexec/k0s, where a payload can be appended to it, and bin/k0s is
+  # the wrapper.
+  #
+  # util-linux is a host tool k0s expects to find rather than something it
+  # carries. No payload component is put on PATH to stand in for the archive,
+  # because staging one out of nixpkgs would run a combination nobody ships.
+  wrapped =
+    k0s:
+    runCommand k0s.name
+      {
+        nativeBuildInputs = [ makeWrapper ];
+        inherit (k0s) meta;
+      }
+      ''
+        install -Dm755 ${k0s}/bin/k0s $out/libexec/k0s
+        makeWrapper $out/libexec/k0s $out/bin/k0s \
+          --prefix PATH : ${lib.makeBinPath [ util-linuxMinimal ]}
+      '';
 in
-lib.genAttrs pins.minors forMinor
+lib.genAttrs pins.minors (minor: wrapped (buildK0s minor))
