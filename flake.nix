@@ -99,6 +99,7 @@
           option-types = import ./checks/types.nix { inherit lib pkgs; };
           option-docs = self.packages.${system}.option-docs;
           embedded-bins = import ./checks/embedded-bins.nix { inherit lib pkgs; };
+          embedded-bins-containerd = import ./checks/embedded-bins-containerd.nix { inherit lib pkgs; };
           embedded-bins-etcd = import ./checks/embedded-bins-etcd.nix { inherit lib pkgs; };
           embedded-bins-iptables = import ./checks/embedded-bins-iptables.nix { inherit lib pkgs; };
           embedded-bins-runc = import ./checks/embedded-bins-runc.nix { inherit lib pkgs; };
