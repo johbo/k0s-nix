@@ -91,6 +91,14 @@ the payload out of the executable it is running, and a wrapper is not
 that executable. The real binary is `libexec/k0s`, which is what carries
 the payload, and `bin/k0s` is the wrapper that execs it.
 
+The components are named again in `$out/nix-support/payload-closure`,
+which is what makes them references of the package. Compressed into the
+payload, a store path is not a string the reference scanner can find, so
+without that file a collection takes the libraries the staged binaries
+were linked against and leaves the payload unrunnable - the very thing
+dynamic linking assumes will not happen. References are transitive, so
+naming the component is enough to hold its own closure with it.
+
 `checks/embedded-bins-payload.nix` reads the payload back the way the
 minor's runtime does - through `zipfile`, which finds a prefixed archive
 by its central directory as `zip.OpenReader` does, or from the tail of

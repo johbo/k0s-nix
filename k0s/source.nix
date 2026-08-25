@@ -164,7 +164,7 @@ let
   # strips $out/bin and shrinks its RPATHs, and both rewrite the ELF - which
   # would discard whatever sits behind it.
   assemble =
-    payload: k0s:
+    staged: payload: k0s:
     runCommand k0s.name
       {
         nativeBuildInputs = [ makeWrapper ];
@@ -176,22 +176,31 @@ let
         ${lib.optionalString (payload != null) "cat ${payload} >>$out/libexec/k0s"}
         makeWrapper $out/libexec/k0s $out/bin/k0s \
           --prefix PATH : ${lib.makeBinPath [ util-linuxMinimal ]}
+
+        # A component is compressed into the payload, so its store path is
+        # nowhere the reference scanner would find it and a collection would
+        # take what the staged binaries link against. Naming the paths in the
+        # output is what holds their closures.
+        ${lib.optionalString (staged != [ ]) ''
+          mkdir -p $out/nix-support
+          printf '%s\n' ${lib.escapeShellArgs staged} >$out/nix-support/payload-closure
+        ''}
       '';
 
   loaded =
     minor:
     let
-      payload = lib.attrValues components.${minor};
+      staged = lib.attrValues components.${minor};
     in
     if hasZipPayload minor then
-      assemble (mkPayload (pins.read minor).k0sVersion payload) (buildK0s minor null)
+      assemble staged (mkPayload (pins.read minor).k0sVersion staged) (buildK0s minor null)
     else
       let
-        k0s = buildK0s minor payload;
+        k0s = buildK0s minor staged;
       in
-      assemble "${k0s.bindata}/bindata_linux" k0s;
+      assemble staged "${k0s.bindata}/bindata_linux" k0s;
 in
 {
-  bare = lib.genAttrs pins.minors (minor: assemble null (buildK0s minor null));
+  bare = lib.genAttrs pins.minors (minor: assemble [ ] null (buildK0s minor null));
   withPayload = lib.genAttrs pins.minors loaded;
 }
