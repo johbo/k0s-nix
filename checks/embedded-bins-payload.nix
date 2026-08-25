@@ -6,8 +6,10 @@ let
 
   manifest = lib.mapAttrsToList (minor: k0s: {
     inherit minor k0s;
+    inherit (k0s) payload;
     runc = components.${minor}.runc;
     k0sVersion = (pins.read minor).k0sVersion;
+    mechanism = if lib.versionAtLeast (pins.read minor).k0sVersion "1.36" then "zip" else "bindata";
   }) sourceBuilds.withPayload;
 
   # zipfile locates the archive by its central directory, the way
@@ -46,7 +48,7 @@ pkgs.runCommand "k0s-embedded-bins-payload"
     failed=
 
     while read -r entry; do
-      eval "$(jq -r '@sh "minor=\(.minor) k0s=\(.k0s) runc=\(.runc) k0sVersion=\(.k0sVersion)"' <<<"$entry")"
+      eval "$(jq -r '@sh "minor=\(.minor) k0s=\(.k0s) runc=\(.runc) k0sVersion=\(.k0sVersion) payload=\(.payload) mechanism=\(.mechanism)"' <<<"$entry")"
 
       # Appending a zip behind an ELF either works or leaves an executable that
       # no longer runs, so the binary is asked first.
@@ -64,10 +66,38 @@ pkgs.runCommand "k0s-embedded-bins-payload"
         failed=1
       fi
 
-      if ! python3 ${readPayload} "$k0s/libexec/k0s" "$runc/bin/runc"; then
-        echo "$minor: the payload does not read back as runc" >&2
-        failed=1
-      fi
+      case "$mechanism" in
+        zip)
+          if ! python3 ${readPayload} "$k0s/libexec/k0s" "$runc/bin/runc"; then
+            echo "$minor: the payload does not read back as runc" >&2
+            failed=1
+          fi
+          ;;
+        bindata)
+          # stage.go seeks EOF - BinDataSize + offset, so the blob has to be the
+          # tail of the binary and nothing may follow it.
+          if ! tail -c "$(stat -c%s "$payload")" "$k0s/libexec/k0s" | cmp -s - "$payload"; then
+            echo "$minor: the blob is not at the end of the binary" >&2
+            failed=1
+          fi
+
+          # The offset table is the half that lives inside the binary, and a
+          # build that kept the noembedbins tag carries an empty one - which
+          # would leave staging to fall back to PATH without saying so.
+          if ! grep -qaF 'bin/runc.gz' "$k0s/libexec/k0s"; then
+            echo "$minor: the binary carries no offset table naming runc" >&2
+            failed=1
+          fi
+
+          gunzip -c "$payload" >staged
+          if ! cmp -s staged "$runc/bin/runc"; then
+            echo "$minor: the blob is not the runc component that was built" >&2
+            failed=1
+          else
+            echo "$minor: payload: bin/runc.gz, $(stat -c%s "$payload") bytes"
+          fi
+          ;;
+      esac
     done < <(jq -c '.[]' "$manifestPath")
 
     [ -z "$failed" ] || exit 1

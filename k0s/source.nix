@@ -47,8 +47,13 @@ let
   buildPkg = "github.com/k0sproject/k0s/pkg/build";
   componentBase = "k8s.io/component-base/version";
 
+  # payload is the list of component packages the binary is to carry, or null
+  # for none. At 1.36 it is always null: the zip is appended to the finished
+  # binary and the Go build never learns of it. Below 1.36 the components are
+  # gzipped into one blob and hack/gen-bindata generates the offset table that
+  # locates them, which the build then compiles in - so they have to be here.
   buildK0s =
-    minor:
+    minor: payload:
     let
       pin = pins.read minor;
       component = pin.upstream.components;
@@ -58,6 +63,8 @@ let
       # to compile at all, and containerd's stamp still lives on the pre-v2
       # module path.
       zipPayload = hasZipPayload minor;
+      generateBindata = payload != null;
+      staging = "embedded-bins/staging/linux";
       containerdVersionPkg =
         if zipPayload then
           "github.com/containerd/containerd/v2/version"
@@ -80,9 +87,31 @@ let
       # network, so go build is both sufficient here and the only option.
       subPackages = [ "." ];
 
+      # The offset table and the blob it describes come out of one generator
+      # run, so the table is compiled in here and the blob leaves through a
+      # second output, to be appended once the package is finished.
+      outputs = [ "out" ] ++ lib.optional generateBindata "bindata";
+
+      preBuild = lib.optionalString generateBindata ''
+        mkdir -p ${staging}/bin
+        for component in ${lib.escapeShellArgs payload}; do
+          install -m755 -t ${staging}/bin "$component"/bin/*
+        done
+
+        go run -tags=hack ./hack/gen-bindata/cmd \
+          -o bindata_linux -pkg assets \
+          -gofile pkg/assets/zz_generated_offsets_linux.go \
+          -prefix ${staging}/ ${staging}/bin
+      '';
+
+      postInstall = lib.optionalString generateBindata ''
+        install -Dm644 -t $bindata \
+          bindata_linux pkg/assets/zz_generated_offsets_linux.go
+      '';
+
       env.CGO_ENABLED = cgoEnabled.${minor} or (throw "no CGO_ENABLED recorded for ${minor}");
 
-      tags = [ "osusergo" ] ++ lib.optional (!zipPayload) "noembedbins";
+      tags = [ "osusergo" ] ++ lib.optional (!zipPayload && !generateBindata) "noembedbins";
 
       # Upstream's -extldflags=-static is deliberately absent: inert where cgo
       # is off, and where it is on it is the same decision the component
@@ -141,6 +170,7 @@ let
       {
         nativeBuildInputs = [ makeWrapper ];
         inherit (k0s) meta;
+        passthru = { inherit payload; };
       }
       ''
         install -Dm755 ${k0s}/bin/k0s $out/libexec/k0s
@@ -149,14 +179,20 @@ let
           --prefix PATH : ${lib.makeBinPath [ util-linuxMinimal ]}
       '';
 
-  payloadFor = minor: mkPayload (pins.read minor).k0sVersion (lib.attrValues components.${minor});
+  loaded =
+    minor:
+    let
+      payload = lib.attrValues components.${minor};
+    in
+    if hasZipPayload minor then
+      assemble (mkPayload (pins.read minor).k0sVersion payload) (buildK0s minor null)
+    else
+      let
+        k0s = buildK0s minor payload;
+      in
+      assemble "${k0s.bindata}/bindata_linux" k0s;
 in
 {
-  bare = lib.genAttrs pins.minors (minor: assemble null (buildK0s minor));
-
-  # Below 1.36 the payload is an input to the Go build rather than something
-  # appended to the finished binary, so those minors are not carried yet.
-  withPayload = lib.genAttrs (lib.filter hasZipPayload pins.minors) (
-    minor: assemble (payloadFor minor) (buildK0s minor)
-  );
+  bare = lib.genAttrs pins.minors (minor: assemble null (buildK0s minor null));
+  withPayload = lib.genAttrs pins.minors loaded;
 }
