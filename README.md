@@ -19,13 +19,48 @@ this Flake for it.
 
 ## Usage
 
-### Build the test system configuration
+### Use the module in your own flake
 
-```sh
-nix build .#nixosConfigurations.test.config.system.build.toplevel
+Add this flake as an input, import `nixosModules.default`, and apply
+`overlays.default`:
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+    k0s-nix.url = "github:nix-community/k0s-nix";
+  };
+
+  outputs =
+    { nixpkgs, k0s-nix, ... }:
+    {
+      nixosConfigurations.my-node = nixpkgs.lib.nixosSystem {
+        modules = [
+          ./hardware-configuration.nix
+          k0s-nix.nixosModules.default
+          {
+            nixpkgs.overlays = [ k0s-nix.overlays.default ];
+
+            services.k0s = {
+              enable = true;
+              role = "single";
+              spec.api.address = "192.0.2.1";
+            };
+
+            system.stateVersion = "26.05";
+          }
+        ];
+      };
+    };
+}
 ```
 
-Inspect the result in `./result`.
+The overlay is not optional: `services.k0s.package` defaults to `pkgs.k0s`,
+which Nixpkgs does not provide. It also supplies `k0s_1_33` through
+`k0s_1_36`.
+
+`spec.api.address` has no default; `192.0.2.1` stands in for the address the
+node binds its API to.
 
 
 ### Validate the generated configuration
