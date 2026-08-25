@@ -95,14 +95,24 @@ The check is also skipped where the builder cannot execute
 
 ### Token handling to join the cluster
 
-`k0s` uses a token to join the cluster. The token has to be placed into
-`/etc/k0s/k0stoken` (configurable via `services.k0s.tokenFile`), otherwise the
-service will not start.
+Whether a node needs a join token follows from its role:
 
-After the join the content is not needed anymore and the file can be emptied.
+- `worker` always needs one.
+- `controller` and `controller+worker` need one to join an existing cluster,
+  unless it uses an external `etcd` (`spec.storage.etcd.externalCluster`).
+- `single`, and the controller carrying `services.k0s.controller.isLeader`,
+  never need one.
 
-Providing the token has to be done either manually or by your favorite
-automation tooling.
+Place the token in the file `services.k0s.tokenFile` names, `/etc/k0s/k0stoken`
+by default. While a token is required and that file is absent, systemd skips
+the unit instead of failing it: `k0s.service` stays inactive and reports no
+error.
+
+The token is only read when joining. Afterwards the file may be emptied, but it
+has to remain: the condition is checked on every start, not only the first.
+
+The module does not provision the token. Placing it on the node is the
+consumer's own step.
 
 
 ## Known limitations
