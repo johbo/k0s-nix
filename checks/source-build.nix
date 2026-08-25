@@ -11,7 +11,7 @@ let
     in
     {
       inherit minor;
-      k0s = sourceBuilds.${minor};
+      k0s = sourceBuilds.bare.${minor};
 
       # The field names are the ones `k0s version --json` prints, and every one
       # of them is `omitempty` - so a stamp that did not take drops out of the

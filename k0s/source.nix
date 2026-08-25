@@ -1,6 +1,7 @@
 {
   lib,
   buildGoModule,
+  callPackage,
   fetchzip,
   makeWrapper,
   runCommand,
@@ -8,6 +9,12 @@
 }:
 let
   pins = import ./embedded-bins/pins.nix { inherit lib; };
+  components = callPackage ./embedded-bins/components { };
+  mkPayload = callPackage ./embedded-bins/payload.nix { };
+
+  # 1.36 moved the payload from an offset table generated into the binary to a
+  # zip appended behind it.
+  hasZipPayload = minor: lib.versionAtLeast (pins.read minor).k0sVersion "1.36";
 
   # Refreshed when a k0s pin moves: build the source-build check and take the
   # hash the failing fixed-output derivation reports.
@@ -47,13 +54,12 @@ let
       component = pin.upstream.components;
       kubernetesVersion = component.kubernetes.version;
 
-      # 1.36 moved the payload from an offset table generated into the binary to
-      # a zip appended behind it. Below it, a build without the generated table
-      # needs the noembedbins tag to compile at all, and containerd's stamp
-      # still lives on the pre-v2 module path.
-      hasZipPayload = lib.versionAtLeast pin.k0sVersion "1.36";
+      # Below 1.36 a build without the generated table needs the noembedbins tag
+      # to compile at all, and containerd's stamp still lives on the pre-v2
+      # module path.
+      zipPayload = hasZipPayload minor;
       containerdVersionPkg =
-        if hasZipPayload then
+        if zipPayload then
           "github.com/containerd/containerd/v2/version"
         else
           "github.com/containerd/containerd/version";
@@ -76,7 +82,7 @@ let
 
       env.CGO_ENABLED = cgoEnabled.${minor} or (throw "no CGO_ENABLED recorded for ${minor}");
 
-      tags = [ "osusergo" ] ++ lib.optional (!hasZipPayload) "noembedbins";
+      tags = [ "osusergo" ] ++ lib.optional (!zipPayload) "noembedbins";
 
       # Upstream's -extldflags=-static is deliberately absent: inert where cgo
       # is off, and where it is on it is the same decision the component
@@ -101,7 +107,7 @@ let
       # Below 1.36 upstream reads this out of the staged containerd binary, and
       # only when it built a payload at all, so a payload-less build has nothing
       # to read and upstream's own leaves it empty too.
-      ++ lib.optional hasZipPayload "-X ${containerdVersionPkg}.Revision=${component.containerd.revision}";
+      ++ lib.optional zipPayload "-X ${containerdVersionPkg}.Revision=${component.containerd.revision}";
 
       # The suite wants a cluster, a container runtime and root for a good part
       # of itself. What this package has to get right is the binary's identity,
@@ -125,8 +131,12 @@ let
   # util-linux is a host tool k0s expects to find rather than something it
   # carries. No payload component is put on PATH to stand in for the archive,
   # because staging one out of nixpkgs would run a combination nobody ships.
-  wrapped =
-    k0s:
+  #
+  # The payload is attached here rather than in the Go build because fixupPhase
+  # strips $out/bin and shrinks its RPATHs, and both rewrite the ELF - which
+  # would discard whatever sits behind it.
+  assemble =
+    payload: k0s:
     runCommand k0s.name
       {
         nativeBuildInputs = [ makeWrapper ];
@@ -134,8 +144,19 @@ let
       }
       ''
         install -Dm755 ${k0s}/bin/k0s $out/libexec/k0s
+        ${lib.optionalString (payload != null) "cat ${payload} >>$out/libexec/k0s"}
         makeWrapper $out/libexec/k0s $out/bin/k0s \
           --prefix PATH : ${lib.makeBinPath [ util-linuxMinimal ]}
       '';
+
+  payloadFor = minor: mkPayload (pins.read minor).k0sVersion (lib.attrValues components.${minor});
 in
-lib.genAttrs pins.minors (minor: wrapped (buildK0s minor))
+{
+  bare = lib.genAttrs pins.minors (minor: assemble null (buildK0s minor));
+
+  # Below 1.36 the payload is an input to the Go build rather than something
+  # appended to the finished binary, so those minors are not carried yet.
+  withPayload = lib.genAttrs (lib.filter hasZipPayload pins.minors) (
+    minor: assemble (payloadFor minor) (buildK0s minor)
+  );
+}

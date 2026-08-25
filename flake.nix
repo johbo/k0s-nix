@@ -100,6 +100,7 @@
           option-docs = self.packages.${system}.option-docs;
           embedded-bins = import ./checks/embedded-bins.nix { inherit lib pkgs; };
           embedded-bins-runc = import ./checks/embedded-bins-runc.nix { inherit lib pkgs; };
+          embedded-bins-payload = import ./checks/embedded-bins-payload.nix { inherit lib pkgs; };
           source-build = import ./checks/source-build.nix { inherit lib pkgs; };
         }
       );
