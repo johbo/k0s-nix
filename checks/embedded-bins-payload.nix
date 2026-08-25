@@ -114,7 +114,9 @@ pkgs.runCommand "k0s-embedded-bins-payload"
       done
 
       staging=$(mktemp -d)
-      install -m644 -t "$staging" "''${components[@]}"/bin/*
+      for component in "''${components[@]}"; do
+        install -m644 -t "$staging" "$component"/bin/*
+      done
 
       # payloadBinaries is upstream's own list of what k0s stages, so a name the
       # payload carries and it does not is a binary nothing will ever ask for.
