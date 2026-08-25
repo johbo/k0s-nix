@@ -29,6 +29,7 @@ Add this flake as an input, import `nixosModules.default`, and apply
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     k0s-nix.url = "github:nix-community/k0s-nix";
+    k0s-nix.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
