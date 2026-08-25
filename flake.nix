@@ -93,6 +93,14 @@
             module = self.nixosModules.default;
           };
         }
+        // lib.optionalAttrs (system == "x86_64-linux") {
+          # The README is one document, so checking it on one system is
+          # enough.
+          readme-example = import ./checks/readme.nix {
+            inherit lib nixpkgs pkgs;
+            k0sNix = self;
+          };
+        }
       );
 
     };
