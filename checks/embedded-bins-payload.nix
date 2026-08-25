@@ -74,7 +74,8 @@ let
         staged = gzip.decompress(data[offset : offset + size])
         if len(staged) != original:
             sys.exit(f"{name} unpacks to {len(staged)} bytes, the table says {original}")
-        with open(os.path.join(staging, os.path.basename(name)[:-3]), "rb") as component:
+        binary = os.path.basename(name).removesuffix(".gz")
+        with open(os.path.join(staging, binary), "rb") as component:
             if staged != component.read():
                 sys.exit(f"the staged {name} is not the component built")
 
@@ -120,10 +121,11 @@ pkgs.runCommand "k0s-embedded-bins-payload"
 
       # payloadBinaries is upstream's own list of what k0s stages, so a name the
       # payload carries and it does not is a binary nothing will ever ask for.
-      for name in "$staging"/*; do
-        if ! jq -e --arg name "$(basename "$name")" \
+      for staged in "$staging"/*; do
+        binary=$(basename "$staged")
+        if ! jq -e --arg name "$binary" \
           '.payloadBinaries | index($name)' <<<"$entry" >/dev/null; then
-          echo "$minor: $(basename "$name") is not a binary k0s stages" >&2
+          echo "$minor: $binary is not a binary k0s stages" >&2
           failed=1
         fi
       done
@@ -162,9 +164,10 @@ pkgs.runCommand "k0s-embedded-bins-payload"
           # The offset table is the half that lives inside the binary, and a
           # build that kept the noembedbins tag carries an empty one - which
           # would leave staging to fall back to PATH without saying so.
-          for name in "$staging"/*; do
-            if ! grep -qaF "bin/$(basename "$name").gz" "$k0s/libexec/k0s"; then
-              echo "$minor: the binary carries no offset table naming $(basename "$name")" >&2
+          for staged in "$staging"/*; do
+            binary=$(basename "$staged")
+            if ! grep -qaF "bin/$binary.gz" "$k0s/libexec/k0s"; then
+              echo "$minor: the binary carries no offset table naming $binary" >&2
               failed=1
             fi
           done
