@@ -4,12 +4,19 @@ let
   components = pkgs.callPackage ../k0s/embedded-bins/components { };
   sourceBuilds = pkgs.callPackage ../k0s/source.nix { };
 
+  # Which mechanism a minor uses is read from the pins rather than taken from
+  # source.nix, so the check decides how to read the payload without asking the
+  # package what it built. Sharing one helper would make the two agree by
+  # construction, and a wrong boundary would then pass.
+  mechanismFor =
+    minor: if lib.versionAtLeast (pins.read minor).k0sVersion "1.36" then "zip" else "bindata";
+
   manifest = lib.mapAttrsToList (minor: k0s: {
     inherit minor k0s;
     inherit (k0s) payload;
     runc = components.${minor}.runc;
     k0sVersion = (pins.read minor).k0sVersion;
-    mechanism = if lib.versionAtLeast (pins.read minor).k0sVersion "1.36" then "zip" else "bindata";
+    mechanism = mechanismFor minor;
   }) sourceBuilds.withPayload;
 
   # zipfile locates the archive by its central directory, the way
