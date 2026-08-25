@@ -78,9 +78,14 @@ nix build .#nixosConfigurations.my-node.config.system.build.toplevel
 
 ### Token handling to join the cluster
 
-`k0s` uses a token to join the cluster. The token has to be placed into
-`/etc/k0s/k0stoken` (configurable via `services.k0s.tokenFile`), otherwise the
-service will not start.
+A worker always needs a join token. A controller needs one when it joins an
+existing cluster, unless it is backed by an external `etcd` cluster. A
+`single` node and the first controller, the one carrying
+`services.k0s.controller.isLeader`, need none.
+
+Where a token is needed it has to be placed into `/etc/k0s/k0stoken`
+(configurable via `services.k0s.tokenFile`), otherwise the service will not
+start.
 
 After the join the content is not needed anymore and the file can be emptied.
 
