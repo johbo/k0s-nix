@@ -125,16 +125,38 @@ Two deliberate deviations from upstream, both asserted by
 `checks/embedded-bins-runc.nix` rather than left to trust:
 
 - **Dynamic linking.** `build_go_ldflags_extra` is `-extldflags=-static`
-  for every Go component and every minor, and it is not reproduced.
-  nixpkgs ships no static `libc`, `libseccomp` or `libresolv`, and the
-  payload is extracted onto a node whose store already holds what the
-  binary links against. A component asserts that the field holds nothing
-  but the static flag, so a pin this would otherwise drop stops the
-  build.
+  wherever it is set at all, and it is not reproduced. nixpkgs ships no
+  static `libc`, `libseccomp` or `libresolv`, and the payload is
+  extracted onto a node whose store already holds what the binary links
+  against. `components/go-ldflags.nix` asserts that the field is absent
+  or holds nothing but the static flag, so a pin this would otherwise
+  drop stops the build. etcd is the component that leaves it unset.
 - **No wrapper.** nixpkgs wraps `runc` to prepend
   `/run/current-system/systemd/bin` to `PATH`. A payload binary that
   execs a store path defeats the point of vendoring it, and k0s prepends
   its own bin directory to the `PATH` of what it supervises.
+
+### etcd
+
+nixpkgs keeps a package per etcd minor series, and both k0s pins land on
+one: 3.5.33 at k0s 1.33, 3.6.14 above it. `components/etcd.nix` selects
+on the pinned series rather than on the k0s minor, and asserts that the
+package it picked carries the pinned version - a nixpkgs bump has to fail
+there rather than on a vendor hash built for another version.
+
+Only the server is a payload binary. nixpkgs joins it with `etcdctl` and
+`etcdutl`, each a derivation of its own, and the component takes
+`deps.etcdserver`, whose `bin/` holds `etcd` alone. `payload.nix` takes
+whatever `bin/` holds, so the join reaching the payload would stage two
+binaries k0s never asks for; `checks/embedded-bins-etcd.nix` asserts it
+does not.
+
+The binary reports `Git SHA: GitNotFound`. Upstream's Dockerfile clones
+the repository and stamps the short SHA, but the source here is a tarball
+with no repository in it - git in the sandbox would find nothing to read,
+and cloning wants a network it does not have. nixpkgs stamps upstream's
+own no-git fallback deliberately, and the check asserts it so it stays a
+decision rather than a surprise.
 
 The Go toolchain is nixpkgs' rather than the `go_version` upstream pins,
 which is not yet a considered decision.

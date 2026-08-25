@@ -5,6 +5,11 @@ let
   # The JSON shape stops here: a component derivation takes the pins it needs
   # as arguments and knows nothing about the file they were read from.
   forMinor = minor: {
+    etcd = callPackage ./etcd.nix {
+      component = (pins.read minor).upstream.components.etcd;
+      sources.etcd = pins.fetch minor "etcd";
+    };
+
     runc = callPackage ./runc.nix {
       component = (pins.read minor).upstream.components.runc;
       sources = {
