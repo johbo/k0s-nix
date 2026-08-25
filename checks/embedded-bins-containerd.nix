@@ -13,9 +13,14 @@ let
     minor:
     let
       component = (pins.read minor).upstream.components.containerd;
+
+      # The same filter the component applies, repeated rather than shared:
+      # reading the set the derivation read would make the two agree by
+      # construction, and a wrong boundary would then pass here.
+      binaries = lib.filter (lib.hasPrefix "containerd") (pins.read minor).upstream.payloadBinaries;
     in
     {
-      inherit minor;
+      inherit minor binaries;
       containerd = components.${minor}.containerd;
       inherit (component) version;
 
@@ -24,7 +29,10 @@ let
       # one from, so the field is empty by decision rather than by accident.
       revision = component.revision or "";
 
-      binaries = lib.filter (lib.hasPrefix "containerd") (pins.read minor).upstream.payloadBinaries;
+      # Each shim carries its own copy of the stamps, and the version line above
+      # reports the daemon's alone.
+      shims = lib.filter (lib.hasPrefix "containerd-shim") binaries;
+
       package = packageFor component.version;
     }
   ) pins.minors;
@@ -46,6 +54,7 @@ pkgs.runCommand "k0s-embedded-bins-containerd"
     while read -r entry; do
       eval "$(jq -r '@sh "minor=\(.minor) containerd=\(.containerd) version=\(.version) revision=\(.revision) package=\(.package)"' <<<"$entry")"
       eval "binaries=($(jq -r '@sh "\(.binaries)"' <<<"$entry"))"
+      eval "shims=($(jq -r '@sh "\(.shims)"' <<<"$entry"))"
 
       # The assertions decide, not the exit status: a binary that is missing or
       # refuses to run is a failure to report beside the others rather than one
@@ -60,15 +69,7 @@ pkgs.runCommand "k0s-embedded-bins-containerd"
         failed=1
       fi
 
-      # Each shim carries its own copy of the stamps, and only the daemon's are
-      # read above. A shim built from another source or without the pins would
-      # otherwise ship unnoticed.
-      for binary in "''${binaries[@]}"; do
-        case "$binary" in
-          containerd-shim*) ;;
-          *) continue ;;
-        esac
-
+      for binary in "''${shims[@]}"; do
         report=$(run "$containerd"/bin/"$binary" -v)
         if ! grep -qxF "  Version:  v$version" <<<"$report"; then
           echo "$minor: $binary reports no 'Version: v$version', got: $report" >&2
