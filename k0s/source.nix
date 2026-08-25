@@ -47,11 +47,10 @@ let
   buildPkg = "github.com/k0sproject/k0s/pkg/build";
   componentBase = "k8s.io/component-base/version";
 
-  # payload is the list of component packages the binary is to carry, or null
-  # for none. At 1.36 it is always null: the zip is appended to the finished
-  # binary and the Go build never learns of it. Below 1.36 the components are
-  # gzipped into one blob and hack/gen-bindata generates the offset table that
-  # locates them, which the build then compiles in - so they have to be here.
+  # At 1.36 payload is always null: the zip is appended to the finished binary
+  # and the Go build never learns of it. Below 1.36 the components are gzipped
+  # into one blob and hack/gen-bindata generates the offset table that locates
+  # them, which the build compiles in - so they have to be here.
   buildK0s =
     minor: payload:
     let
@@ -63,14 +62,14 @@ let
       # to compile at all, and containerd's stamp still lives on the pre-v2
       # module path.
       zipPayload = hasZipPayload minor;
-      generateBindata = payload != null;
-      staging = "embedded-bins/staging/linux";
       containerdVersionPkg =
         if zipPayload then
           "github.com/containerd/containerd/v2/version"
         else
           "github.com/containerd/containerd/version";
 
+      generateBindata = payload != null;
+      staging = "embedded-bins/staging/linux";
     in
     buildGoModule {
       pname = "k0s";

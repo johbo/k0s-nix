@@ -3,11 +3,9 @@
   runCommand,
   zip,
 }:
-# The payload k0s 1.36 carries is a flat zip appended behind the binary:
-# pkg/assets/stage.go opens the running executable with zip.OpenReader and
+# pkg/assets/stage.go opens the running k0s executable with zip.OpenReader and
 # matches an entry against the plain binary name, so the entries are base names
-# and there is no directory and no manifest. A zip's index sits at its end,
-# which is what lets both formats stay readable in one file.
+# and there is no directory and no manifest.
 name: components:
 runCommand "k0s-payload-${name}" { nativeBuildInputs = [ zip ]; } ''
   binaries=()
