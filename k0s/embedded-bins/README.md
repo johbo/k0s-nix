@@ -137,6 +137,32 @@ to trust - the first while the component evaluates, the second by
   execs a store path defeats the point of vendoring it, and k0s prepends
   its own bin directory to the `PATH` of what it supervises.
 
+### containerd
+
+The one component whose binary set is a pin of its own. k0s passes
+`--build-arg CONTAINERD_BINS`, fed from a `containerd_bins` variable that
+is not one of the `_build_*` suffixes `extract.py` reads, and the set
+moves with the containerd major - four binaries at k0s 1.33, two at 1.36.
+The component takes the `containerd`-prefixed names out of
+`payloadBinaries`, which names the same set on every packaged minor, and
+passes them as `COMMANDS`. That also suppresses the `COMMANDS +=` in
+containerd's `Makefile.linux`, so `ctr` and `containerd-stress` stay out.
+
+nixpkgs' `makeFlags` are replaced rather than added to, in a build phase
+of the component's own. The list is composed with `rec`, so `VERSION` and
+`REVISION` would keep naming 2.3.3 while 1.33 to 1.35 build 1.7.34; and
+nixpkgs interpolates it unquoted, which would split the tags and the
+linker flags into `make` targets. The tags go in as `GO_BUILDTAGS`
+whatever the minor: both Makefiles derive `GO_TAGS` from it, so the pin's
+own spelling - `apparmor selinux` at 1.36, `apparmor,selinux` below -
+passes through verbatim.
+
+`REVISION` is always passed, so the Makefile's `git rev-parse` never runs
+in a sandbox with no repository to read. 1.36 pins one and the binary
+reports it; below that nothing does. Upstream uses the pin to verify its
+clone rather than to stamp, and here the fetch hash makes that assertion
+instead.
+
 ### etcd
 
 nixpkgs keeps a package per etcd minor series, and both k0s pins land on
