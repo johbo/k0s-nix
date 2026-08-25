@@ -10,6 +10,11 @@ let
       sources.etcd = pins.fetch minor "etcd";
     };
 
+    iptables = callPackage ./iptables.nix {
+      component = (pins.read minor).upstream.components.iptables;
+      sources.iptables = pins.fetch minor "iptables";
+    };
+
     runc = callPackage ./runc.nix {
       component = (pins.read minor).upstream.components.runc;
       sources = {

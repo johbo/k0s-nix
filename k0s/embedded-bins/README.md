@@ -158,6 +158,33 @@ and cloning wants a network it does not have. nixpkgs stamps upstream's
 own no-git fallback deliberately, and the check asserts it so it stays a
 decision rather than a surprise.
 
+### iptables
+
+The only component with no Go pins at all. `Makefile.variables` carries a
+version and a build image and nothing else, and upstream's static linking
+- `--enable-static --disable-shared` with `LDFLAGS=-all-static` - is in
+the Dockerfile's own `configure` call, which `extract.py` never reads. So
+there is nothing for `go-ldflags.nix` to assert against here; the
+deviation is the one ADR-0016 already decided, whose reasoning does not
+turn on the component being written in Go.
+
+k0s pins 1.8.11 below 1.36 and 1.8.13 at it. The override runs on every
+minor rather than only where the versions differ, so one path is
+exercised instead of two that drift apart as the pins move.
+
+`payload.nix` takes whatever `bin/` holds and the nixpkgs package
+installs some forty entries, so the component installs the two multi
+binaries into an output of its own. k0s stages both - it errors if either
+is missing - and makes the `iptables`, `iptables-save`,
+`iptables-restore` and `ip6tables` symlinks itself once it has detected a
+mode, so the payload carries no symlink.
+
+Where upstream's static build compiles the extensions in, these dlopen
+them out of the `lib` output at runtime. That is the sharpest case for
+`payload-closure` above: without it the extensions are what a collection
+takes first, and `checks/embedded-bins-iptables.nix` loads one to prove
+the path resolves.
+
 The Go toolchain is nixpkgs' rather than the `go_version` upstream pins,
 which is not yet a considered decision.
 
