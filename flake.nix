@@ -28,28 +28,37 @@
         "x86_64-darwin"
       ];
       allSystems = k0sSystems ++ darwinSystems;
-      forAllK0sSystems = lib.genAttrs k0sSystems;
+      forAllSystems = lib.genAttrs allSystems;
     in
     {
-      packages = forAllK0sSystems (
+      packages = forAllSystems (
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
         in
-        genPackages pkgs
+        # k0s itself is a linux binary; the option documentation builds
+        # anywhere.
+        lib.optionalAttrs (lib.elem system k0sSystems) (genPackages pkgs)
+        // {
+          option-docs = import ./docs/options.nix {
+            inherit nixpkgs pkgs;
+            module = self.nixosModules.default;
+          };
+        }
       );
 
       overlays.default = final: prev: genPackages prev;
 
-      nixosModules.default = import ./nixos/k0s.nix;
+      nixosModules.default = ./nixos/k0s.nix;
 
-      formatter = (lib.genAttrs allSystems) (system: nixpkgs.legacyPackages.${system}.nixfmt-tree);
+      formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-tree);
 
-      checks = (lib.genAttrs k0sSystems) (
+      checks = forAllSystems (
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          versions = builtins.filter (name: name != "k0s") (builtins.attrNames self.packages.${system});
+          # Empty on darwin, where there is no k0s package to test.
+          versions = builtins.filter (lib.hasPrefix "k0s_") (builtins.attrNames self.packages.${system});
           tests = map (name: lib.strings.removeSuffix ".nix" name) (
             builtins.attrNames (builtins.readDir ./tests)
           );
@@ -88,10 +97,7 @@
         )
         // {
           option-types = import ./checks/types.nix { inherit lib pkgs; };
-          option-docs = import ./checks/docs.nix {
-            inherit nixpkgs pkgs;
-            module = self.nixosModules.default;
-          };
+          option-docs = self.packages.${system}.option-docs;
         }
       );
 
