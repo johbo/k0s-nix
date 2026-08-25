@@ -24,6 +24,7 @@ this Flake for it.
 Add this flake as an input, import `nixosModules.default`, and apply
 `overlays.default`:
 
+<!-- readme-example -->
 ```nix
 {
   inputs = {
