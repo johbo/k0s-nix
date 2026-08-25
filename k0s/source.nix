@@ -164,12 +164,17 @@ let
   # strips $out/bin and shrinks its RPATHs, and both rewrite the ELF - which
   # would discard whatever sits behind it.
   assemble =
-    staged: payload: k0s:
+    {
+      staged ? [ ],
+      payload ? null,
+      offsets ? null,
+    }:
+    k0s:
     runCommand k0s.name
       {
         nativeBuildInputs = [ makeWrapper ];
         inherit (k0s) meta;
-        passthru = { inherit payload; };
+        passthru = { inherit payload offsets; };
       }
       ''
         install -Dm755 ${k0s}/bin/k0s $out/libexec/k0s
@@ -193,14 +198,21 @@ let
       staged = lib.attrValues components.${minor};
     in
     if hasZipPayload minor then
-      assemble staged (mkPayload (pins.read minor).k0sVersion staged) (buildK0s minor null)
+      assemble {
+        inherit staged;
+        payload = mkPayload (pins.read minor).k0sVersion staged;
+      } (buildK0s minor null)
     else
       let
         k0s = buildK0s minor staged;
       in
-      assemble staged "${k0s.bindata}/bindata_linux" k0s;
+      assemble {
+        inherit staged;
+        payload = "${k0s.bindata}/bindata_linux";
+        offsets = "${k0s.bindata}/zz_generated_offsets_linux.go";
+      } k0s;
 in
 {
-  bare = lib.genAttrs pins.minors (minor: assemble [ ] null (buildK0s minor null));
+  bare = lib.genAttrs pins.minors (minor: assemble { } (buildK0s minor null));
   withPayload = lib.genAttrs pins.minors loaded;
 }
