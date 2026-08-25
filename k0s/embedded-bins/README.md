@@ -1,14 +1,15 @@
 # embedded-bins
 
-A k0s release binary is `k0s.bare` with a payload of component binaries
-carried behind it. Upstream builds each component in its own container
-image, from the versions and build parameters in
+A k0s release binary is the k0s executable with a payload of component
+binaries carried behind it. Upstream builds each component in its own
+container image, from the versions and build parameters in
 `embedded-bins/Makefile.variables`. This directory reads those pins so a
 payload can be built from source here.
 
 Nothing in this directory is on a consumer's build path yet. It supplies
-the component derivations that are being built up, reachable through the
-checks until the payload decides their public surface.
+the component derivations that are being built up, and the payload they
+are assembled into, reachable through the checks until that payload
+decides their public surface.
 
 ## The payload mechanism differs by minor
 
@@ -37,13 +38,15 @@ all.
 
 ## The source build
 
-`../source.nix` builds `k0s.bare` itself, one derivation per minor,
-against the k0s source each minor's JSON already pins under the name
-`k0s`. It carries no payload: the components are being built up
-separately, and nothing from nixpkgs is put on `PATH` to stand in for
-the archive, because that would run a combination upstream never ships.
-`checks/source-build.nix` is what proves it, diffing `k0s version
---json` against the pins the binary was stamped from.
+`../source.nix` builds k0s itself, one derivation per minor, against the
+k0s source each minor's JSON already pins under the name `k0s`. It
+offers two sets: `bare` carries no payload, and `withPayload` carries
+whatever `components/` has for that minor. `checks/source-build.nix`
+proves the first, diffing `k0s version --json` against the pins the
+binary was stamped from; `checks/embedded-bins-payload.nix` proves the
+second, below. Nothing from nixpkgs is put on `PATH` to stand in for a
+component the payload does not carry yet, because that would run a
+combination upstream never ships.
 
 It needs no codegen phase. The Makefile regenerates deepcopy functions,
 CRDs and the clientset before every build, but only because the stamp
@@ -61,6 +64,40 @@ dropped rqlite altogether. This is the same trap as runc's libseccomp
 `ARG` - a build parameter living outside the file the extractor reads -
 except that this one is a per-target `make` variable rather than a
 Dockerfile `ARG`, so the guards do not cover it.
+
+## How the payload is attached
+
+The two mechanisms above are two assembly paths, and `../source.nix`
+carries both.
+
+At **1.36** the components are zipped by `payload.nix` and the archive
+is appended to the finished binary. The Go build takes no argument from
+it, so it is the same derivation `bare` builds and a component moving
+into the payload does not rebuild k0s.
+
+**Below 1.36** the components are staged into
+`embedded-bins/staging/linux/bin` in `preBuild` and `hack/gen-bindata`
+is run over them, exactly as the Makefile does. It writes both halves of
+the payload at once: the blob, and the offset table that locates entries
+in it. The table is compiled in, so `noembedbins` comes off and the
+build depends on the components; the blob leaves through a second
+output, `bindata`.
+
+Appending is a step of its own in both cases rather than part of the Go
+build, because `fixupPhase` strips `$out/bin` and shrinks its RPATHs -
+each of which rewrites the ELF and would discard whatever sits behind
+it. That step also wraps the binary, and the order matters: `k0s` reads
+the payload out of the executable it is running, and a wrapper is not
+that executable. The real binary is `libexec/k0s`, which is what carries
+the payload, and `bin/k0s` is the wrapper that execs it.
+
+`checks/embedded-bins-payload.nix` reads the payload back the way the
+minor's runtime does - through `zipfile`, which finds a prefixed archive
+by its central directory as `zip.OpenReader` does, or from the tail of
+the binary where `stage.go` seeks - and compares it against the
+component that was built. Below 1.36 it also greps the binary for an
+entry name, because a build that kept `noembedbins` carries an empty
+table and would fall back to `PATH` without saying so.
 
 ## The component derivations
 
