@@ -121,8 +121,9 @@ upstream's Dockerfile. nixpkgs already carries the build knowledge - its
 so what the override adds is k0s's version, its linker flags and its
 libseccomp pin.
 
-Two deliberate deviations from upstream, both asserted by
-`checks/embedded-bins-runc.nix` rather than left to trust:
+Two deliberate deviations from upstream, each asserted rather than left
+to trust - the first while the component evaluates, the second by
+`checks/embedded-bins-runc.nix`:
 
 - **Dynamic linking.** `build_go_ldflags_extra` is `-extldflags=-static`
   wherever it is set at all, and it is not reproduced. nixpkgs ships no
