@@ -259,6 +259,12 @@ all, which is the case that motivates them.
 The guards are exercised by the check rather than trusted: it mutates a
 copy of the source three ways and asserts each one is refused.
 
+`update.py` carries one of its own, which the check cannot reach because
+an update needs the network. `pins.nix` resolves a source by name and
+takes the first match, so a name used twice hides an entry - and a
+component with two `extra_urls` is what would produce one. The update
+stops instead of writing data that reads as though it had one.
+
 ## Read before packaging a component
 
 - Upstream's container build is not reproducible on its own terms - it
