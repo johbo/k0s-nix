@@ -40,8 +40,21 @@ def update(minor: str) -> None:
         for url in component.get("extra_urls", []):
             fetch.append(fetch_entry(f"{name}/extra", url, False, known))
 
+    refuse_duplicate_names(fetch)
     write(HERE / f"{minor}.json",
           {"k0sVersion": version, "upstream": upstream, "fetch": fetch})
+
+
+# pins.fetch resolves a source by name and takes the first match, so a name
+# used twice hides the other entry. A component with two extra_urls is what
+# would produce one, and the naming scheme to tell those apart is a decision
+# for whoever meets the case rather than one to guess at now.
+def refuse_duplicate_names(fetch: list[dict]) -> None:
+    seen = set()
+    for name in (item["name"] for item in fetch):
+        if name in seen:
+            sys.exit(f"two sources named {name}; they need names of their own")
+        seen.add(name)
 
 
 # A git source is fetched as its forge's tag archive rather than cloned,
