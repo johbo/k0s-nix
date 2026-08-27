@@ -106,6 +106,14 @@
           embedded-bins-runc = import ./checks/embedded-bins-runc.nix { inherit lib pkgs; };
           embedded-bins-payload = import ./checks/embedded-bins-payload.nix { inherit lib pkgs; };
           source-build = import ./checks/source-build.nix { inherit lib pkgs; };
+
+          # One VM per assembly path rather than one per minor: 1.36 appends a
+          # zip behind the finished binary, and below it the offset table is
+          # compiled in. The tests/ cross product would take all four.
+          source-build-vm-1_36 = import ./checks/source-build-vm.nix {
+            inherit lib pkgs;
+            minor = "1_36";
+          };
         }
       );
 
