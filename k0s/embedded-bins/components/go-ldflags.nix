@@ -7,4 +7,4 @@ let
   extra = component.build_go_ldflags_extra or staticLinking;
 in
 assert extra == staticLinking;
-component.build_go_ldflags
+component.build_go_ldflags or ""
