@@ -10,6 +10,12 @@ The implementation is in its early phase. It is possible to use and make work
 (with a few manual twists) for early inspection.
 
 
+## Module options
+
+The options of the NixOS module are documented at
+<https://nix-community.github.io/k0s-nix/>.
+
+
 ## Contributions
 
 Both contributions and forks are welcome, also if this should ever reach a state
