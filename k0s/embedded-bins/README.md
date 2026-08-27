@@ -217,6 +217,74 @@ them out of the `lib` output at runtime. That is the sharpest case for
 takes first, and `checks/embedded-bins-iptables.nix` loads one to prove
 the path resolves.
 
+The Go toolchain is nixpkgs' rather than the `go_version` upstream pins,
+which is not yet a considered decision.
+
+### kubernetes
+
+The last of the single node components, and the second whose binary set
+is out of band: `kubernetes_bins` is a plain variable in
+`embedded-bins/Makefile`, the same class as `containerd_bins`, so
+ADR-0020 applies and the component filters the `kube`-prefixed names out
+of `payloadBinaries` - `kubelet`, `kube-apiserver`, `kube-scheduler` and
+`kube-controller-manager` on every packaged minor, with `keepalived` not
+colliding. They go in as the `components` argument the nixpkgs package
+already takes, which is also what sets `WHAT`.
+
+nixpkgs' `installPhase` is replaced rather than extended, and `outputs`
+drops to `out`. It symlinks `kubectl` in, substitutes `kube-addons`,
+installs man pages and generates shell completions by *running*
+`kubeadm` - which an overridden `components` no longer builds, so the
+phase fails on a binary that is not there. `payload.nix` takes whatever
+`bin/` holds, so the symlink would have staged a binary k0s never asks
+for even if it had run.
+
+**The version stamp does not transfer as an environment variable.** The
+source is a GitHub archive, so the placeholders `git archive`
+substitutes are already expanded in `hack/lib/version.sh`: it carries
+the commit, `KUBE_GIT_TREE_STATE="archive"` and the tag literally, reads
+them before it looks at the environment, and *overwrites* what it finds.
+Upstream's `export KUBE_GIT_VERSION="v$VERSION+k0s"` only survives
+because its Dockerfile clones with git, where the placeholders are
+unexpanded and the block is skipped. `KUBE_GIT_VERSION_FILE` is the
+mechanism that does transfer - `get_version_vars` sources it and returns
+ahead of everything else - so the component writes one, taking the
+commit back out of the source's own archive stamp and supplying the
+major and minor the skipped semver parse would have derived. The `+k0s`
+suffix is upstream's, and it is what a node reports as its kubelet
+version.
+
+Because that version is stamped rather than read, no binary can report a
+source other than the pinned one, and the check cannot tell the two
+apart - where etcd asserts the nixpkgs package's version and containerd
+reads the daemon's own. So the component asserts instead that the tag in
+the archive stamp is the version the pin names, which is what would catch
+a pin moved without its `fetch` entry.
+
+`SOURCE_DATE_EPOCH` is exported in the build phase rather than set on
+the derivation. k8s renders `buildDate` from it, and
+`set-source-date-epoch-to-latest.sh` raises the variable to the newest
+mtime under `sourceRoot` *after* unpacking - a store path carries mtime
+1, so a value set any earlier comes out a second late. The constant is
+`source.nix`'s, so k0s and its payload agree on the date they were not
+built on.
+
+**`riscv64.patch` is not applied.** Upstream's Dockerfile applies it
+unconditionally, and all it does is append `linux/riscv64` to the four
+`KUBE_SUPPORTED_*_PLATFORMS` lists and teach `kube::util::host_arch` the
+name. Neither is read by a `make WHAT=` build: `build_binaries` defaults
+to the host platform and never consults those lists, which belong to the
+release tooling. So the patch is unreachable on every platform k0s-nix
+builds, and applying it would make this component depend on the k0s
+source tarball to change nothing.
+
+`checks/embedded-bins-kubernetes.nix` reads `--version=raw` out of each
+binary, which renders the whole `version.Info` struct, so one call
+carries every stamp the build is meant to have set. `GitVersion` and
+`GitTreeState` are the two that say the version file was read at all:
+without it the archive's own values win and report the plain version and
+`archive`.
+
 ## The generated files
 
 `1_33.json` through `1_36.json` are generated. Regenerate rather than
