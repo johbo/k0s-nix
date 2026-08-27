@@ -31,6 +31,12 @@ let
         sources.iptables = pins.fetch minor "iptables";
       };
 
+      kubernetes = callPackage ./kubernetes.nix {
+        component = (pins.read minor).upstream.components.kubernetes;
+        inherit ((pins.read minor).upstream) payloadBinaries;
+        sources.kubernetes = pins.fetch minor "kubernetes";
+      };
+
       runc = callPackage ./runc.nix {
         component = (pins.read minor).upstream.components.runc;
         sources = {
