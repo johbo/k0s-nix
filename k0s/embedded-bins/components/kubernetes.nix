@@ -56,6 +56,16 @@ assert commands != [ ];
       exit 1
     }
 
+    # The version below is stamped rather than read, so no binary can report a
+    # source that is not the pinned one - a pin moved without its fetch entry
+    # would ship binaries claiming a version nobody built. The archive stamp
+    # names the tag it was cut from, which is what ties the two together.
+    tag=$(sed -n "/^ *if \[\[ '/s/.*tag: \(v[^ ,']*\).*/\1/p" hack/lib/version.sh)
+    [ "$tag" = "v${version}" ] || {
+      echo "the source archive is tagged '$tag', and the pin says 'v${version}'" >&2
+      exit 1
+    }
+
     cat >kube-version <<EOF
     KUBE_GIT_COMMIT='$commit'
     KUBE_GIT_TREE_STATE='clean'
