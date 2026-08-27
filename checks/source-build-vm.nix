@@ -46,11 +46,14 @@ let
       fi
 
       # Running one is what proves it still resolves what it links against.
-      # iptables needs more than --version: its extensions are dlopened out of
-      # the lib output and nothing in the ELF names them, so only an
-      # invocation that loads one reaches them.
       case "$entry" in
+        # iptables needs more than a version flag: its extensions are dlopened
+        # out of the lib output and nothing in the ELF names them, so only an
+        # invocation that loads one reaches them.
         xtables-*-multi) "./$entry" iptables -m conntrack --help >/dev/null ;;
+        # containerd 2's shim takes --version and the 1.7 shims below 1.36 do
+        # not. Every shim in both majors takes -v.
+        containerd-shim*) "./$entry" -v >/dev/null ;;
         *) "./$entry" --version >/dev/null ;;
       esac
     done
