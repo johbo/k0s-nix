@@ -137,6 +137,11 @@ to trust - the first while the component evaluates, the second by
   execs a store path defeats the point of vendoring it, and k0s prepends
   its own bin directory to the `PATH` of what it supervises.
 
+A third deviation carries no assertion, because the pins hold nothing it
+could be checked against: the Go toolchain is nixpkgs' rather than the
+`go_version` each minor pins. ADR-0019 decided that for every component
+and minor, as nixpkgs' k3s does.
+
 ### containerd
 
 The one component whose binary set is a pin of its own. k0s passes
@@ -211,9 +216,6 @@ them out of the `lib` output at runtime. That is the sharpest case for
 `payload-closure` above: without it the extensions are what a collection
 takes first, and `checks/embedded-bins-iptables.nix` loads one to prove
 the path resolves.
-
-The Go toolchain is nixpkgs' rather than the `go_version` upstream pins,
-which is not yet a considered decision.
 
 ## The generated files
 
