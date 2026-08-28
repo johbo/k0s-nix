@@ -303,6 +303,38 @@ Like iptables, the component installs the one binary itself: keepalived
 goes to `sbin` and `bin` gets a `genhash` symlink, where `payload.nix`
 takes whatever `bin/` holds.
 
+### kine
+
+Three versions across the four minors - 0.13.19 at 1.33, 0.14.16 at 1.34
+and 1.35, 0.16.3 at 1.36 - and nixpkgs packages none of them, so the
+source is overridden everywhere and each version owes a vendor hash of
+its own. The table is keyed by kine version rather than by k0s minor,
+which is what lets 1.34 and 1.35 share an entry.
+
+Two pins are what the component adds beyond the version. The `nats`
+build tag compiles the embedded NATS server in, and nixpkgs sets no tags
+at all; `build_go_cgo_cflags` replaces nixpkgs' value rather than adding
+to it, since nixpkgs sets `-DSQLITE_ENABLE_DBSTAT_VTAB=1` on every
+version and only 1.33 pins it. The linker flags replace nixpkgs' for the
+same reason: its stamps name the version it packages, and a second `-X`
+on one symbol would leave the binary's identity to whichever the linker
+takes last.
+
+`GitCommit` is stamped `unknown`. Upstream builds it from `git rev-parse`
+in a clone, the tarball-has-no-git case etcd meets differently - kine has
+no fallback of its own, so nixpkgs' answer is kept and
+`checks/embedded-bins-kine.nix` reads it back out of `kine --version`.
+
+The nixpkgs package runs kine's test suite and this component does not
+(ADR-0027). The `nats` tag compiles in a suite nixpkgs never builds, and
+at 0.13.19 it fails against its own embedded server - a different set of
+tests each run. What the check reads back instead is that the tag took,
+by the embedded server's constructor being a symbol in the binary, and
+that cgo was on, by the binary carrying an interpreter. cgo off would
+leave `go-sqlite3` a stub that builds and fails at runtime, and it is on
+by default rather than by a pin: `kine_build_go_cgo_enabled` is commented
+out upstream, so the component asserts the field is absent.
+
 ### kubernetes
 
 The last of the single node components, and the second whose binary set
