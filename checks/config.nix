@@ -92,10 +92,6 @@ let
     ) config.system.checks;
 
   deployedConfig = config: config.environment.etc."k0s/k0s.yaml".source;
-
-  # Naming a store path in the build would make this check depend on the
-  # derivation it is asserting about, and on all of system.checks with it.
-  report = value: builtins.unsafeDiscardStringContext (toString value);
 in
 pkgs.runCommand "k0s-config-cases"
   {
@@ -104,8 +100,8 @@ pkgs.runCommand "k0s-config-cases"
     wiredWhenEnabled = lib.boolToString (isWired withCheck);
     wiredWhenDefault = lib.boolToString (isWired withoutCheck);
     enabledChecks = lib.concatMapStringsSep " " (check: check.name) withCheck.system.checks;
-    deployedWithCheck = report (deployedConfig withCheck);
-    deployedWithoutCheck = report (deployedConfig withoutCheck);
+    deployedWithCheck = deployedConfig withCheck;
+    deployedWithoutCheck = deployedConfig withoutCheck;
   }
   ''
     echo "==> system.checks with enableConfigCheck: $enabledChecks"
