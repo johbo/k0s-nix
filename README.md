@@ -47,10 +47,15 @@ Error: spec: network: calico.mode: Forbidden: dual-stack for calico is only supp
 
 Set `services.k0s.enableConfigCheck = true` to add it to `system.checks`, so
 that `nixos-rebuild` fails on an invalid configuration instead of the node
-reporting it later. It is off by default: it runs `services.k0s.package` on
-the builder, so the rules applied are those of the k0s version this host
-runs, and a version bump can fail a build that passed before. It is skipped
-where the builder cannot execute that binary, as when cross building.
+reporting it later. k0s runs the same validation when the controller starts
+and refuses to start on an error, so this only moves the failure earlier.
+
+It is off by default because k0s validates against the host as well as the
+file, and a build has no host to offer. Control plane load balancing is one
+such case; `hostDependentCases` in `checks/config.nix` demonstrates it.
+
+The check is also skipped where the builder cannot execute
+`services.k0s.package`, as when cross building.
 
 
 ### Token handling to join the cluster

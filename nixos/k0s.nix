@@ -169,11 +169,12 @@ in
         the system build instead of the node. What the node deploys is
         the same either way.
 
-        Off by default: it runs {option}`services.k0s.package` on the
-        builder, so the rules applied are those of the k0s version this
-        host runs, and a version bump can fail a build that passed
-        before. It is skipped silently where the builder cannot execute
-        that binary.
+        Off by default: k0s validates against the host as well as the
+        file, so a configuration that is valid on a node can fail in a
+        build. Control plane load balancing is one such case.
+
+        The check is skipped silently where the builder cannot execute
+        {option}`services.k0s.package`.
       '';
       type = bool;
       default = false;
