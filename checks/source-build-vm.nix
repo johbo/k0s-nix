@@ -8,30 +8,45 @@ let
   sourceBuilds = pkgs.callPackage ../k0s/source.nix { };
 
   k0s = sourceBuilds.withPayload.${minor};
-  staged = lib.attrValues components.${minor};
+  payload = components.${minor};
+
+  # The payload and what a single node stages are no longer the same set.
+  # keepalived belongs to the control plane load balancer, and cplb_linux.go is
+  # the only caller that stages it, so a node running no load balancer never
+  # asks for it. kine and konnectivity will join it here.
+  notStagedBySingleNode = [ "keepalived" ];
 
   # sha256sum -c reads a name relative to its working directory, so the entries
   # are bare binary names and the check runs from the staging directory.
   # Hashing through stdin keeps the component store paths out of the file,
   # which is what lets it into the VM as plain data.
-  payloadHashes = pkgs.runCommand "k0s-payload-hashes-${minor}" { } ''
-    for component in ${lib.escapeShellArgs staged}; do
-      for binary in "$component"/bin/*; do
-        echo "$(sha256sum <"$binary" | cut -d' ' -f1)  $(basename "$binary")"
-      done
-    done >$out
-  '';
+  hashesOf =
+    name: components:
+    pkgs.runCommand "k0s-${name}-${minor}" { } ''
+      for component in ${lib.escapeShellArgs components}; do
+        for binary in "$component"/bin/*; do
+          echo "$(sha256sum <"$binary" | cut -d' ' -f1)  $(basename "$binary")"
+        done
+      done >$out
+    '';
+
+  stagedHashes = hashesOf "staged-hashes" (
+    lib.attrValues (removeAttrs payload notStagedBySingleNode)
+  );
+  payloadHashes = hashesOf "payload-hashes" (lib.attrValues payload);
 
   verifyStaged = pkgs.writeShellScript "verify-staged-payload" ''
     set -euo pipefail
     staging=$1
-    hashes=$2
+    stagedHashes=$2
+    payloadHashes=$3
     cd "$staging"
 
     # Names and bytes in one pass, driven from the payload's side: a binary the
     # node never staged fails to open, and one staged from somewhere else fails
-    # to match.
-    sha256sum -c "$hashes"
+    # to match. Only what a single node stages is demanded here; the wider list
+    # below is what the staging directory is read against.
+    sha256sum -c "$stagedHashes"
 
     for entry in *; do
       # k0s makes the iptables and ip6tables symlinks itself, so those are the
@@ -40,7 +55,7 @@ let
         continue
       fi
 
-      if ! grep -q "  $entry\$" "$hashes"; then
+      if ! grep -q "  $entry\$" "$payloadHashes"; then
         echo "$entry is staged and is not a payload binary" >&2
         exit 1
       fi
@@ -116,6 +131,6 @@ pkgs.testers.runNixOSTest {
       # Staging is lazy, and iptables is the last of the components k0s reaches
       # for.
       node1.wait_until_succeeds("test -e ${staging}/xtables-nft-multi", timeout=300)
-      node1.succeed("${verifyStaged} ${staging} ${payloadHashes}")
+      node1.succeed("${verifyStaged} ${staging} ${stagedHashes} ${payloadHashes}")
     '';
 }

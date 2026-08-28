@@ -31,6 +31,11 @@ let
         sources.iptables = pins.fetch minor "iptables";
       };
 
+      keepalived = callPackage ./keepalived.nix {
+        component = (pins.read minor).upstream.components.keepalived;
+        sources.keepalived = pins.fetch minor "keepalived";
+      };
+
       kubernetes = callPackage ./kubernetes.nix {
         component = (pins.read minor).upstream.components.kubernetes;
         inherit ((pins.read minor).upstream) payloadBinaries;
