@@ -109,6 +109,12 @@ component that was built. Below 1.36 it also greps the binary for an
 entry name, because a build that kept `noembedbins` carries an empty
 table and would fall back to `PATH` without saying so.
 
+The names are read against `payloadBinaries` in both directions, which
+they can be now that the components cover the whole of upstream's list.
+A payload entry k0s does not stage is a binary nothing will ever ask
+for, and a name k0s stages that the payload lacks is one the node would
+have to find on `PATH`.
+
 ## What a running node proves
 
 The checks above read the payload out of the binary. They do not say k0s
@@ -128,9 +134,11 @@ only an invocation that loads one reaches them.
 It reads two lists rather than one, because the payload and what a
 single node stages are not the same set. What a node stages is demanded
 to be there and to match; the whole payload is what a staged binary has
-to appear in. keepalived is the first entry to fall between them - it
-belongs to the control plane load balancer, which a single node does not
-run - and kine and konnectivity will join it.
+to appear in. Three entries fall between them: keepalived belongs to the
+control plane load balancer, which a single node does not run, kine is
+staged for a SQL backend the test does not configure, and konnectivity
+is out by mode rather than by configuration - `cmd/controller` gates it
+on the node not being a single one.
 
 It runs at 1.36 and 1.35, one per assembly path, rather than at every
 minor. The zip and the offset table are what differ between them, and a
@@ -157,7 +165,8 @@ A component overrides the nixpkgs package rather than reproducing
 upstream's Dockerfile. nixpkgs already carries the build knowledge - its
 `runc` sets `BUILDTAGS+=seccomp` and takes `libseccomp` as an argument -
 so what the override adds is k0s's version, its linker flags and its
-libseccomp pin.
+libseccomp pin. konnectivity is the exception, and only because nixpkgs
+packages no `apiserver-network-proxy` to override.
 
 Two deliberate deviations from upstream, each asserted rather than left
 to trust - the first while the component evaluates, the second by
@@ -334,6 +343,34 @@ that cgo was on, by the binary carrying an interpreter. cgo off would
 leave `go-sqlite3` a stub that builds and fails at runtime, and it is on
 by default rather than by a pin: `kine_build_go_cgo_enabled` is commented
 out upstream, so the component asserts the field is absent.
+
+### konnectivity
+
+The one component nixpkgs does not package, so it is a `buildGoModule`
+of its own rather than an override. Two things upstream's Dockerfile
+does are not reproduced. It clones the tag and runs `make gen` first -
+protoc and mockgen `go install`ed over a network the sandbox does not
+have - and every file that generates is committed in the source, so the
+build reads them out of the tarball and the generators never run. The
+tarball also carries `vendor/`, which is why this is the one Go
+component owing no vendor hash.
+
+It is also the only binary here that reports no version. Upstream passes
+`-w -s` and no `-X`, and the server has no version flag and no version
+subcommand, so nothing can be read back out of it. What
+`checks/embedded-bins-konnectivity.nix` reads instead is the Go build
+info: that `cmd/server` is the package built, and that `CGO_ENABLED`
+matches the pin. Tying a minor's tarball to the version it records is
+left to the component, which asserts the fetch URL names it.
+
+`build_go_flags` is `-a`, and it is dropped rather than passed on: it
+forces a rebuild of what is already built, which buys nothing in a
+sandbox that has built none. The component asserts the pin holds nothing
+else, so a flag added upstream stops the build instead of vanishing.
+
+The Dockerfile builds `bin/proxy-server` and renames it to
+`konnectivity-server` on the way into the image. The rename is the
+component's, because the payload entry has to be the name k0s stages.
 
 ### kubernetes
 
