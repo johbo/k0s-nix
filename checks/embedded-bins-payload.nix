@@ -130,6 +130,17 @@ pkgs.runCommand "k0s-embedded-bins-payload"
         fi
       done
 
+      # The components cover the whole list now, so the assertion goes both
+      # ways: a name k0s stages that the payload lacks is one the node would
+      # have to find on PATH, which is the combination vendoring exists to
+      # avoid.
+      while read -r wanted; do
+        if [ ! -e "$staging/$wanted" ]; then
+          echo "$minor: the payload carries no $wanted" >&2
+          failed=1
+        fi
+      done < <(jq -r '.payloadBinaries[]' <<<"$entry")
+
       # Appending a zip behind an ELF either works or leaves an executable that
       # no longer runs, so the binary is asked first.
       reported=$("$k0s"/bin/k0s version)
