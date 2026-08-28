@@ -107,6 +107,35 @@ component that was built. Below 1.36 it also greps the binary for an
 entry name, because a build that kept `noembedbins` carries an empty
 table and would fall back to `PATH` without saying so.
 
+## What a running node proves
+
+The checks above read the payload out of the binary. They do not say k0s
+stages it, or that a staged binary runs, and until every component a
+single node needs was in the archive there was no point asking: the rest
+would have come off `PATH`, which is a combination upstream neither
+ships nor tests.
+
+`checks/source-build-vm.nix` boots a single node on `withPayload` and
+asks both. Every binary in the data directory's `bin` is compared
+against the component it was built from, and then executed. Running one
+is what says it still resolves what it links against; `iptables` is the
+case that needs more than `--version`, because its extensions are
+dlopened out of the `lib` output and nothing in the ELF names them, so
+only an invocation that loads one reaches them.
+
+It runs at 1.36 and 1.35, one per assembly path, rather than at every
+minor. The zip and the offset table are what differ between them, and a
+third VM would re-prove neither.
+
+The node stays **NotReady**, and the check asserts that rather than
+working around it. k0s deploys its CNI, coredns and metrics-server from
+`quay.io`, and a test VM resolves nothing, so the kubelet never gets a
+cni config. What a registered node does establish is that the API
+server, the controller manager, the scheduler, etcd, the kubelet,
+containerd and runc all started out of the archive - none of them can
+report in otherwise. Reaching Ready needs the images seeded into the VM,
+which is not done.
+
 ## The component derivations
 
 `components/` holds one derivation per payload binary, keyed by minor:
