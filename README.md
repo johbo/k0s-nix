@@ -45,9 +45,9 @@ they cannot see:
 Error: spec: network: calico.mode: Forbidden: dual-stack for calico is only supported for mode `bird`
 ```
 
-Set `services.k0s.validateConfig = true` to make the system build depend on
-it. It is off by default: it runs the packaged `k0s` binary on the builder,
-and ties every build to one k0s version's rules.
+Set `services.k0s.enableConfigCheck = true` to make the system build depend
+on it. It is off by default: it runs the packaged `k0s` binary on the
+builder, and ties every build to one k0s version's rules.
 
 
 ### Token handling to join the cluster

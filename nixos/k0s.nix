@@ -47,7 +47,7 @@ let
   canValidate = pkgs.stdenv.buildPlatform.canExecute pkgs.stdenv.hostPlatform;
 
   deployedConfig =
-    if cfg.validateConfig && canValidate then cfg.validatedConfigFile else cfg.configFile;
+    if cfg.enableConfigCheck && canValidate then cfg.validatedConfigFile else cfg.configFile;
 in
 {
   imports = [
@@ -164,7 +164,7 @@ in
       defaultText = literalMD "{option}`services.k0s.configFile`, validated";
     };
 
-    validateConfig = mkOption {
+    enableConfigCheck = mkOption {
       description = ''
         Whether the system build depends on
         {option}`services.k0s.validatedConfigFile`, so that an invalid
