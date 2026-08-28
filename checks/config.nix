@@ -77,10 +77,39 @@ let
 
   k0sOf = extra: (evalCase extra).services.k0s;
 
+  # Invalid in the build sandbox, but valid on the target node.
+  hostDependentCases = {
+    control-plane-load-balancing-without-interface = {
+      extra = {
+        services.k0s.spec.network.controlPlaneLoadBalancing = {
+          enabled = true;
+          keepalived.vrrpInstances = [
+            {
+              virtualIPs = [ "10.0.0.2/24" ];
+              authPass = "changeme";
+            }
+          ];
+        };
+      };
+      message = "failed to get default NIC";
+    };
+  };
+
   validate = name: extra: ''
     echo "==> ${name}"
     ${package}/bin/k0s config validate --config ${(k0sOf extra).configFile}
   '';
+
+  expectFailure =
+    name:
+    { extra, message }:
+    let
+      failed = pkgs.testers.testBuildFailure (k0sOf extra).validatedConfigFile;
+    in
+    ''
+      echo "==> ${name}, which cannot be validated in a build"
+      grep -F ${lib.escapeShellArg message} ${failed}/testBuildFailure.log
+    '';
 
   withCheck = evalCase { services.k0s.enableConfigCheck = true; };
   withoutCheck = evalCase { };
@@ -121,6 +150,8 @@ pkgs.runCommand "k0s-config-cases"
       fail "enableConfigCheck changes the deployed /etc/k0s/k0s.yaml"
 
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList validate cases)}
+
+    ${lib.concatStringsSep "\n" (lib.mapAttrsToList expectFailure hostDependentCases)}
 
     echo "==> validatedConfigFile"
     test -s ${(k0sOf { }).validatedConfigFile}
