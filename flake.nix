@@ -7,15 +7,24 @@
     { self, nixpkgs, ... }:
     let
 
-      genPackages = pkgs: rec {
-        inherit (pkgs.callPackage ./k0s/default.nix { })
-          k0s_1_33
-          k0s_1_34
-          k0s_1_35
-          k0s_1_36
-          ;
-        k0s = k0s_1_35;
-      };
+      # A hyphen rather than `k0s_source_*`: update.yml selects its matrix by
+      # `contains("k0s_")` and reads the filename out of what follows, so an
+      # underscore would send the weekly job at a file that does not exist.
+      genPackages =
+        pkgs:
+        let
+          sourceBuilds = pkgs.callPackage ./k0s/source.nix { };
+        in
+        rec {
+          inherit (pkgs.callPackage ./k0s/default.nix { })
+            k0s_1_33
+            k0s_1_34
+            k0s_1_35
+            k0s_1_36
+            ;
+          k0s = k0s_1_35;
+        }
+        // lib.mapAttrs' (minor: lib.nameValuePair "k0s-source_${minor}") sourceBuilds.withPayload;
 
       lib = nixpkgs.lib;
       k0sSystems = [
