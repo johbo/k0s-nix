@@ -169,9 +169,11 @@ in
         the system build instead of the node. What the node deploys is
         the same either way.
 
-        Off by default: it runs the packaged k0s binary on the builder,
-        and ties every build to the rules of one k0s version. It is
-        skipped silently where the builder cannot execute that binary.
+        Off by default: it runs {option}`services.k0s.package` on the
+        builder, so the rules applied are those of the k0s version this
+        host runs, and a version bump can fail a build that passed
+        before. It is skipped silently where the builder cannot execute
+        that binary.
       '';
       type = bool;
       default = false;
