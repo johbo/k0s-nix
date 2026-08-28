@@ -41,6 +41,11 @@ let
         sources.kine = pins.fetch minor "kine";
       };
 
+      konnectivity = callPackage ./konnectivity.nix {
+        component = (pins.read minor).upstream.components.konnectivity;
+        sources.konnectivity = pins.fetch minor "konnectivity";
+      };
+
       kubernetes = callPackage ./kubernetes.nix {
         component = (pins.read minor).upstream.components.kubernetes;
         inherit ((pins.read minor).upstream) payloadBinaries;
