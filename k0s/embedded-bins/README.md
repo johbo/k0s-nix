@@ -45,9 +45,10 @@ whatever `components/` has for that minor. `checks/source-build.nix`
 proves the first, diffing `k0s version --json` against the pins the
 binary was stamped from; `checks/embedded-bins-payload.nix` and
 `checks/source-build-vm.nix` prove the second, below - one reads the
-archive out of the binary, the other boots a node on it. Nothing from nixpkgs is put on `PATH` to stand in for a
-component the payload does not carry yet, because that would run a
-combination upstream never ships.
+archive out of the binary, the other boots a node on it. Nothing from
+nixpkgs is put on `PATH` to stand in for a component the payload does
+not carry yet, because that would run a combination upstream never
+ships.
 
 It needs no codegen phase. The Makefile regenerates deepcopy functions,
 CRDs and the clientset before every build, but only because the stamp
