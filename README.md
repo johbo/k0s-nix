@@ -45,8 +45,9 @@ they cannot see:
 Error: spec: network: calico.mode: Forbidden: dual-stack for calico is only supported for mode `bird`
 ```
 
-Set `services.k0s.enableConfigCheck = true` to make the system build depend
-on it. It is off by default: it runs the packaged `k0s` binary on the
+Set `services.k0s.enableConfigCheck = true` to add it to `system.checks`, so
+that `nixos-rebuild` fails on an invalid configuration and the node never
+sees it. It is off by default: it runs the packaged `k0s` binary on the
 builder, and ties every build to one k0s version's rules.
 
 

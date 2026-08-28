@@ -12,6 +12,7 @@ let
     mkOption
     mkIf
     literalMD
+    optional
     optionalString
     concatMapAttrs
     ;
@@ -45,9 +46,6 @@ let
       '';
 
   canValidate = pkgs.stdenv.buildPlatform.canExecute pkgs.stdenv.hostPlatform;
-
-  deployedConfig =
-    if cfg.enableConfigCheck && canValidate then cfg.validatedConfigFile else cfg.configFile;
 in
 {
   imports = [
@@ -166,9 +164,10 @@ in
 
     enableConfigCheck = mkOption {
       description = ''
-        Whether the system build depends on
-        {option}`services.k0s.validatedConfigFile`, so that an invalid
-        configuration fails the build instead of the node.
+        Adds {option}`services.k0s.validatedConfigFile` to
+        {option}`system.checks`, so that an invalid configuration fails
+        the system build instead of the node. What the node deploys is
+        the same either way.
 
         Off by default: it runs the packaged k0s binary on the builder,
         and ties every build to the rules of one k0s version. It is
@@ -204,7 +203,9 @@ in
         }
       ];
 
-      environment.etc."k0s/k0s.yaml".source = deployedConfig;
+      environment.etc."k0s/k0s.yaml".source = cfg.configFile;
+
+      system.checks = optional (cfg.enableConfigCheck && canValidate) cfg.validatedConfigFile;
 
       systemd.services.${unitName} = {
         description = "k0s - Zero Friction Kubernetes";
@@ -230,7 +231,7 @@ in
           Restart = "always";
           ExecStart =
             "${cfg.package}/bin/k0s ${subcommand} --data-dir=${cfg.dataDir}"
-            + optionalString (cfg.role != "worker") " --config=${deployedConfig}"
+            + optionalString (cfg.role != "worker") " --config=${cfg.configFile}"
             + optionalString (cfg.role == "single") " --single"
             + optionalString (cfg.role == "controller+worker") " --enable-worker --no-taints"
             + optionalString requireJoinToken " --token-file=${cfg.tokenFile}"
