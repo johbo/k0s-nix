@@ -120,6 +120,10 @@
           embedded-bins-runc = import ./checks/embedded-bins-runc.nix { inherit lib pkgs; };
           embedded-bins-payload = import ./checks/embedded-bins-payload.nix { inherit lib pkgs; };
           source-build = import ./checks/source-build.nix { inherit lib pkgs; };
+          source-packages = import ./checks/source-packages.nix {
+            inherit lib pkgs;
+            packages = self.packages.${system};
+          };
 
           # One VM per assembly path rather than one per minor: 1.36 appends a
           # zip behind the finished binary, and below it the offset table is
