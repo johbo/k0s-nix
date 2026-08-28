@@ -21,32 +21,30 @@ let
   # Hashing through stdin keeps the component store paths out of the file,
   # which is what lets it into the VM as plain data.
   hashesOf =
-    name: components:
+    name: selected:
     pkgs.runCommand "k0s-${name}-${minor}" { } ''
-      for component in ${lib.escapeShellArgs components}; do
+      for component in ${lib.escapeShellArgs (lib.attrValues selected)}; do
         for binary in "$component"/bin/*; do
           echo "$(sha256sum <"$binary" | cut -d' ' -f1)  $(basename "$binary")"
         done
       done >$out
     '';
 
-  stagedHashes = hashesOf "staged-hashes" (
-    lib.attrValues (removeAttrs payload notStagedBySingleNode)
-  );
-  payloadHashes = hashesOf "payload-hashes" (lib.attrValues payload);
+  stagedHashes = hashesOf "staged-hashes" (removeAttrs payload notStagedBySingleNode);
+  payloadHashes = hashesOf "payload-hashes" payload;
 
   verifyStaged = pkgs.writeShellScript "verify-staged-payload" ''
     set -euo pipefail
     staging=$1
-    stagedHashes=$2
-    payloadHashes=$3
+    staged_hashes=$2
+    payload_hashes=$3
     cd "$staging"
 
     # Names and bytes in one pass, driven from the payload's side: a binary the
     # node never staged fails to open, and one staged from somewhere else fails
     # to match. Only what a single node stages is demanded here; the wider list
     # below is what the staging directory is read against.
-    sha256sum -c "$stagedHashes"
+    sha256sum -c "$staged_hashes"
 
     for entry in *; do
       # k0s makes the iptables and ip6tables symlinks itself, so those are the
@@ -55,7 +53,7 @@ let
         continue
       fi
 
-      if ! grep -q "  $entry\$" "$payloadHashes"; then
+      if ! grep -q "  $entry\$" "$payload_hashes"; then
         echo "$entry is staged and is not a payload binary" >&2
         exit 1
       fi
