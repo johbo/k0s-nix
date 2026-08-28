@@ -114,6 +114,10 @@
             inherit lib pkgs;
             minor = "1_36";
           };
+          source-build-vm-1_35 = import ./checks/source-build-vm.nix {
+            inherit lib pkgs;
+            minor = "1_35";
+          };
         }
       );
 
