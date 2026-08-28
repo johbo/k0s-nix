@@ -36,6 +36,11 @@ let
         sources.keepalived = pins.fetch minor "keepalived";
       };
 
+      kine = callPackage ./kine.nix {
+        component = (pins.read minor).upstream.components.kine;
+        sources.kine = pins.fetch minor "kine";
+      };
+
       kubernetes = callPackage ./kubernetes.nix {
         component = (pins.read minor).upstream.components.kubernetes;
         inherit ((pins.read minor).upstream) payloadBinaries;
