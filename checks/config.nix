@@ -112,18 +112,17 @@ pkgs.runCommand "k0s-config-cases"
     echo "==> deployed with the check:    $deployedWithCheck"
     echo "==> deployed without the check: $deployedWithoutCheck"
 
-    if [ "$wiredWhenEnabled" != "true" ]; then
-      echo "enableConfigCheck does not add validatedConfigFile to system.checks" >&2
+    fail() {
+      echo "$1" >&2
       exit 1
-    fi
-    if [ "$wiredWhenDefault" != "false" ]; then
-      echo "validatedConfigFile is in system.checks without enableConfigCheck" >&2
-      exit 1
-    fi
-    if [ "$deployedWithCheck" != "$deployedWithoutCheck" ]; then
-      echo "enableConfigCheck changes the deployed /etc/k0s/k0s.yaml" >&2
-      exit 1
-    fi
+    }
+
+    [ "$wiredWhenEnabled" = "true" ] ||
+      fail "enableConfigCheck does not add validatedConfigFile to system.checks"
+    [ "$wiredWhenDefault" = "false" ] ||
+      fail "validatedConfigFile is in system.checks without enableConfigCheck"
+    [ "$deployedWithCheck" = "$deployedWithoutCheck" ] ||
+      fail "enableConfigCheck changes the deployed /etc/k0s/k0s.yaml"
 
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList validate cases)}
 
