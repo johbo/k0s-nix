@@ -19,24 +19,25 @@ buildGoModule {
   pname = "konnectivity-server";
   inherit version;
 
+  # Upstream's Dockerfile runs `make gen` before it builds, which is protoc and
+  # mockgen installed over the network. Everything the two write is committed in
+  # the tarball - the .pb.go files and proto/agent/mocks - so the build reads
+  # them from the source and the generators never run.
   src = fetchzip { inherit (sources.konnectivity) url hash; };
 
   # The tarball carries vendor/, so there is no module fetch and no hash to
   # record per version - the one thing every other Go component here owes.
   vendorHash = null;
 
-  # Upstream's Dockerfile runs `make gen` first, which is protoc and mockgen
-  # installed over the network. Both write into paths the source already
-  # carries - the .pb.go files and proto/agent/mocks - so the build reads them
-  # out of the tarball instead and the generators never run.
   subPackages = [ "cmd/server" ];
 
   env.CGO_ENABLED = component.build_go_cgo_enabled;
 
   ldflags = lib.splitString " " (import ./go-ldflags.nix component);
 
-  # The suite is not what upstream's Dockerfile builds, and cmd/server is the
-  # only package installed.
+  # checkPhase runs over subPackages, and cmd/server carries no test files, so
+  # leaving it on would report a suite that was never there. What tests the
+  # repository has sit in packages this does not build.
   doCheck = false;
 
   # The Dockerfile builds bin/proxy-server and renames it on the way into the

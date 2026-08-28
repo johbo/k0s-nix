@@ -34,8 +34,8 @@ pkgs.runCommand "k0s-embedded-bins-konnectivity"
       info=$(go version -m "$binary")
       echo "$minor: $(head -1 <<<"$info")"
 
-      # The Dockerfile builds cmd/server/main.go, and this is what says the
-      # rename below renamed that rather than some other command in the tree.
+      # The Dockerfile builds cmd/server/main.go, so this is what says the
+      # renamed binary is that command rather than another one in the tree.
       path=$(awk '$1 == "path" { print $2 }' <<<"$info")
       if [ "$path" != sigs.k8s.io/apiserver-network-proxy/cmd/server ]; then
         echo "$minor: the binary was built from $path" >&2
