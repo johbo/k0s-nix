@@ -124,6 +124,13 @@ case that needs more than `--version`, because its extensions are
 dlopened out of the `lib` output and nothing in the ELF names them, so
 only an invocation that loads one reaches them.
 
+It reads two lists rather than one, because the payload and what a
+single node stages are not the same set. What a node stages is demanded
+to be there and to match; the whole payload is what a staged binary has
+to appear in. keepalived is the first entry to fall between them - it
+belongs to the control plane load balancer, which a single node does not
+run - and kine and konnectivity will join it.
+
 It runs at 1.36 and 1.35, one per assembly path, rather than at every
 minor. The zip and the offset table are what differ between them, and a
 third VM would re-prove neither.
@@ -249,6 +256,51 @@ the path resolves.
 
 The Go toolchain is nixpkgs' rather than the `go_version` upstream pins,
 which is not yet a considered decision.
+
+### keepalived
+
+The second C build, and the only payload binary a single node never
+stages: `cplb_linux.go` stages it when the control plane load balancer
+is configured, and nothing else asks for it. That is what splits the VM
+check's two lists apart.
+
+nixpkgs carries 2.3.4, which is the pin at 1.34, 1.35 and 1.36; only
+1.33 differs, at 2.2.8. The override runs on every minor for the reason
+iptables' does.
+
+ADR-0024 gives it k0s's feature set rather than nixpkgs'. Upstream's
+Dockerfile installs openssl and libnl3 and nothing else, so what k0s
+ships has VRRP and LVS alone, where nixpkgs adds `file`, `libmnl`,
+`libnftnl` and net-snmp. Nothing k0s configures reaches those - its VRRP
+template writes `auth_type PASS`, and it runs the payload's own xtables
+binaries for the NAT rather than asking keepalived to. `-v` reports the
+detected feature set as two compiled-in lists, so
+`checks/embedded-bins-keepalived.nix` asserts the decision against the
+binary rather than the derivation.
+
+`--disable-dynamic-linking` is passed as the pin has it, and it is not
+the static linking ADR-0016 drops. It makes keepalived link libiptc,
+libipset and libnl at build time instead of `dlopen`ing them by soname -
+the trap iptables' extensions already cost a `payload-closure` entry to
+avoid - and with ipset absent it changes nothing.
+
+The source is the tarball the pin names rather than nixpkgs' GitHub
+archive, and not only because the pin says so. The release tarball ships
+`lib/git-commit.h`, which is where the version string's date comes from;
+an archive carries none, and `lib/Makefile.am` then derives one from the
+newest file mtime. That is 1 in a store path, so nixpkgs' own build
+reports `Keepalived v2.3.4 (01/01,1970)`.
+
+`configure` compiles its own command line into the binary, so the
+package's prefix and each buildInput's `-dev` pkg-config path are
+strings in it, and `payload-closure` would hand a node the build
+environment of a binary it already has. `remove-references-to` takes
+them back out; what that also mangles is the default configuration path,
+which k0s never reads because it always passes `--use-file`.
+
+Like iptables, the component installs the one binary itself: keepalived
+goes to `sbin` and `bin` gets a `genhash` symlink, where `payload.nix`
+takes whatever `bin/` holds.
 
 ### kubernetes
 
