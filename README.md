@@ -43,10 +43,32 @@ automation tooling.
 ## Known limitations
 
 
-### `k0s` is included as a binary
+### `k0s` is included as a binary by default
 
-`k0s` is currently included as a binary. It would be better to replicate the
-build process so that it would be built from sources.
+`k0s`, and the `k0s_1_33` to `k0s_1_36` it aliases, install the release binary
+upstream publishes.
+
+A source-built alternative stands beside each of them as `k0s-source_1_33` to
+`k0s-source_1_36`. These build k0s from its own source at the same pin and
+carry the same payload a release binary carries - containerd, runc, etcd,
+kine, konnectivity, kubernetes, iptables and keepalived, each built from the
+version `embedded-bins/Makefile.variables` names at that tag. Take one by
+naming it:
+
+```nix
+services.k0s.package = pkgs.k0s-source_1_36;
+```
+
+Nothing caches this flake's outputs, so a consumer of the source build builds
+Kubernetes, etcd and containerd itself. That is why the fetched binary remains
+what `k0s` resolves to, and why the source build is opted into rather than
+defaulted to.
+
+What backs it: `k0s/embedded-bins/README.md` describes how each component is
+packaged, the checks read the version stamps and the payload contents back out
+of the built binary on all four minors, and `checks/source-build-vm.nix` runs a
+node on it at 1.36 and 1.35. CI builds `x86_64-linux` only, and no component
+has been built on either arm.
 
 The following pull requests and issues around Nixpkgs are related to this:
 
