@@ -103,6 +103,7 @@
           embedded-bins-etcd = import ./checks/embedded-bins-etcd.nix { inherit lib pkgs; };
           embedded-bins-iptables = import ./checks/embedded-bins-iptables.nix { inherit lib pkgs; };
           embedded-bins-keepalived = import ./checks/embedded-bins-keepalived.nix { inherit lib pkgs; };
+          embedded-bins-kine = import ./checks/embedded-bins-kine.nix { inherit lib pkgs; };
           embedded-bins-kubernetes = import ./checks/embedded-bins-kubernetes.nix { inherit lib pkgs; };
           embedded-bins-runc = import ./checks/embedded-bins-runc.nix { inherit lib pkgs; };
           embedded-bins-payload = import ./checks/embedded-bins-payload.nix { inherit lib pkgs; };

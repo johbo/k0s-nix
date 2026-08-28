@@ -13,8 +13,12 @@ let
   # The payload and what a single node stages are no longer the same set.
   # keepalived belongs to the control plane load balancer, and cplb_linux.go is
   # the only caller that stages it, so a node running no load balancer never
-  # asks for it. kine and konnectivity will join it here.
-  notStagedBySingleNode = [ "keepalived" ];
+  # asks for it. kine is staged for a SQL backend, and this test configures
+  # none. konnectivity will join them here.
+  notStagedBySingleNode = [
+    "keepalived"
+    "kine"
+  ];
 
   # sha256sum -c reads a name relative to its working directory, so the entries
   # are bare binary names and the check runs from the staging directory.
