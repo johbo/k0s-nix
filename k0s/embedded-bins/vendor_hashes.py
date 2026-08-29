@@ -50,9 +50,6 @@ MISMATCH = re.compile(
 
 
 def refresh(pins: dict[str, dict]) -> None:
-    """
-    Bring every table in step, building only where one owes a hash.
-    """
     owed = {}
     for table in TABLES:
         recorded = read(table.path)
@@ -64,8 +61,8 @@ def refresh(pins: dict[str, dict]) -> None:
         record(owed, reported(minors_owing(pins, owed)))
 
 
-def load(here: Path = HERE) -> dict[str, dict]:
-    return {p.stem: json.loads(p.read_text()) for p in sorted(here.glob("1_*.json"))}
+def load() -> dict[str, dict]:
+    return {p.stem: json.loads(p.read_text()) for p in sorted(HERE.glob("1_*.json"))}
 
 
 def minors_owing(pins: dict[str, dict], owed: dict[str, set[str]]) -> list[str]:
@@ -80,7 +77,13 @@ def reported(minors: list[str]) -> dict[str, str]:
     hashes = {}
     for minor in minors:
         print(f"building k0s-source_{minor} to learn its hashes", file=sys.stderr)
-        hashes |= mismatches(build(minor))
+        log = build(minor)
+        found = mismatches(log)
+        # Every minor here owes a hash, so reporting none means the build
+        # failed for some other reason.
+        if not found:
+            sys.exit(log)
+        hashes |= found
     return hashes
 
 
@@ -107,15 +110,11 @@ def build(minor: str) -> str:
 
 
 def mismatches(log: str) -> dict[str, str]:
-    """
-    Map each derivation the build reported to the hash it wanted.
-
-    A mismatch outside the two tables means some other pin is wrong, which
-    is worth stopping for rather than passing over on the way to ours.
-    """
     hashes = {}
     for drv, hash_ in MISMATCH.findall(log):
         name = drv_name(drv)
+        # A mismatch outside the two tables means some other pin is wrong,
+        # which is worth stopping for rather than passing over on the way.
         if not any(name.startswith(f"{table.pname}-") for table in TABLES):
             sys.exit(f"unexpected hash mismatch in {name}")
         hashes[name] = hash_

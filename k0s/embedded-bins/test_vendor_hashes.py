@@ -28,7 +28,9 @@ TABLE = """{
 
 class TableTest(unittest.TestCase):
     def setUp(self):
-        self.path = Path(tempfile.mkdtemp()) / "kine.nix"
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        self.path = Path(directory.name) / "kine.nix"
         self.path.write_text(TABLE)
 
     def test_reads_every_entry(self):
@@ -64,36 +66,37 @@ class TableTest(unittest.TestCase):
             vendor_hashes.read(self.path)
 
 
-class MismatchTest(unittest.TestCase):
-    def log(self, name, got):
-        return (
-            f"building '/nix/store/{'a' * 32}-{name}.drv'...\n"
-            f"error: hash mismatch in fixed-output derivation "
-            f"'/nix/store/{'b' * 32}-{name}.drv':\n"
-            f"         specified: {vendor_hashes.PLACEHOLDER}\n"
-            f"            got:    {got}\n"
-        )
+def mismatch_log(name, got):
+    return (
+        f"building '/nix/store/{'a' * 32}-{name}.drv'...\n"
+        f"error: hash mismatch in fixed-output derivation "
+        f"'/nix/store/{'b' * 32}-{name}.drv':\n"
+        f"         specified: {vendor_hashes.PLACEHOLDER}\n"
+        f"            got:    {got}\n"
+    )
 
+
+class MismatchTest(unittest.TestCase):
     def test_reads_the_hash_a_derivation_wanted(self):
-        log = self.log("kine-0.16.3-go-modules", "sha256-real=")
+        log = mismatch_log("kine-0.16.3-go-modules", "sha256-real=")
         self.assertEqual(
             vendor_hashes.mismatches(log), {"kine-0.16.3": "sha256-real="}
         )
 
     def test_reads_a_k0s_version_carrying_its_own_suffix(self):
-        log = self.log("k0s-1.36.3+k0s.2-go-modules", "sha256-real=")
+        log = mismatch_log("k0s-1.36.3+k0s.2-go-modules", "sha256-real=")
         self.assertEqual(
             vendor_hashes.mismatches(log), {"k0s-1.36.3+k0s.2": "sha256-real="}
         )
 
     def test_reads_every_derivation_the_build_reported(self):
-        log = self.log("k0s-1.36.3+k0s.2-go-modules", "sha256-one=") + self.log(
-            "kine-0.16.3-go-modules", "sha256-two="
-        )
+        log = mismatch_log(
+            "k0s-1.36.3+k0s.2-go-modules", "sha256-one="
+        ) + mismatch_log("kine-0.16.3-go-modules", "sha256-two=")
         self.assertEqual(len(vendor_hashes.mismatches(log)), 2)
 
     def test_a_mismatch_we_do_not_own_stops_the_run(self):
-        log = self.log("etcdserver-3.6.14-go-modules", "sha256-real=")
+        log = mismatch_log("etcdserver-3.6.14-go-modules", "sha256-real=")
         with self.assertRaises(SystemExit):
             vendor_hashes.mismatches(log)
 
