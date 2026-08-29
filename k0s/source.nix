@@ -16,13 +16,15 @@ let
   # zip appended behind it.
   hasZipPayload = minor: lib.versionAtLeast (pins.read minor).k0sVersion "1.36";
 
-  # Refreshed when a k0s pin moves: build the source-build check and take the
-  # hash the failing fixed-output derivation reports.
+  # Keyed by k0s version rather than by minor, so a moved pin reads as a
+  # missing entry - which is what lets update.py see that it owes a hash.
+  # Refreshed by update.py, which takes the hash from the fixed-output
+  # derivation it makes fail.
   vendorHashes = {
-    "1_33" = "sha256-t31v/A4EsaPph1QOd/0h3qTfL5poItP6k2ULLqCMEms=";
-    "1_34" = "sha256-QdPO/qYxNSPEkJnB6VPmsmDPHSEd2Hql/ZdgMR1IzRo=";
-    "1_35" = "sha256-AfAtrHoMdAbVoloNvj/785uy8Pa1PrlOCfEh2iEA8u4=";
-    "1_36" = "sha256-+ZME6rqB0GU6cKCPB3KgxgHyUN5QnmcIW8UgLsER5G8=";
+    "1.33.13+k0s.1" = "sha256-t31v/A4EsaPph1QOd/0h3qTfL5poItP6k2ULLqCMEms=";
+    "1.34.10+k0s.0" = "sha256-QdPO/qYxNSPEkJnB6VPmsmDPHSEd2Hql/ZdgMR1IzRo=";
+    "1.35.7+k0s.0" = "sha256-AfAtrHoMdAbVoloNvj/785uy8Pa1PrlOCfEh2iEA8u4=";
+    "1.36.3+k0s.2" = "sha256-+ZME6rqB0GU6cKCPB3KgxgHyUN5QnmcIW8UgLsER5G8=";
   };
 
   # Upstream sets this per target and per minor, in the Makefile rather than in
@@ -77,7 +79,8 @@ let
 
       src = fetchzip { inherit (pins.fetch minor "k0s") url hash; };
 
-      vendorHash = vendorHashes.${minor} or (throw "no vendorHash recorded for ${minor}");
+      vendorHash =
+        vendorHashes.${pin.k0sVersion} or (throw "no vendorHash recorded for k0s ${pin.k0sVersion}");
 
       # No codegen phase. The Makefile regenerates deepcopy functions, CRDs and
       # the clientset before every build, because the stamp files it uses as
