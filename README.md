@@ -67,8 +67,12 @@ defaulted to.
 What backs it: `k0s/embedded-bins/README.md` describes how each component is
 packaged, the checks read the version stamps and the payload contents back out
 of the built binary on all four minors, and `checks/source-build-vm.nix` runs a
-node on it at 1.36 and 1.35. CI builds `x86_64-linux` only, and no component
-has been built on either arm.
+node on it at 1.36 and 1.35.
+
+The source build is offered on `x86_64-linux` and `aarch64-linux`, the systems
+every component and both assembly paths have been built on. `armv7l-linux` gets
+the fetched binary alone. CI builds `x86_64-linux`, so aarch64 is proven by a
+run rather than by a job that repeats.
 
 The following pull requests and issues around Nixpkgs are related to this:
 
