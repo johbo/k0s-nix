@@ -2,11 +2,11 @@
 
 ## The component derivations
 
-`components/` holds one derivation per payload binary, keyed by minor:
-`components/default.nix` turns a minor's JSON into the arguments each
-component takes, so a component file knows the pins it needs and nothing
-about the file they came from. `pins.nix` is the reader both it and
-`checks/embedded-bins.nix` use.
+This directory holds one derivation per payload binary, keyed by minor:
+`default.nix` turns a minor's JSON into the arguments each component
+takes, so a component file knows the pins it needs and nothing about the
+file they came from. `k0s/embedded-bins/pins.nix` is the reader both it
+and `checks/embedded-bins.nix` use.
 
 A component overrides the nixpkgs package rather than reproducing
 upstream's Dockerfile. nixpkgs already carries the build knowledge - its
@@ -23,9 +23,9 @@ to trust - the first while the component evaluates, the second by
   wherever it is set at all, and it is not reproduced. nixpkgs ships no
   static `libc`, `libseccomp` or `libresolv`, and the payload is
   extracted onto a node whose store already holds what the binary links
-  against. `components/go-ldflags.nix` asserts that the field is absent
-  or holds nothing but the static flag, so a pin this would otherwise
-  drop stops the build. etcd is the component that leaves it unset.
+  against. `go-ldflags.nix` asserts that the field is absent or holds
+  nothing but the static flag, so a pin this would otherwise drop stops
+  the build. etcd is the component that leaves it unset.
 - **No wrapper.** nixpkgs wraps `runc` to prepend
   `/run/current-system/systemd/bin` to `PATH`. A payload binary that
   execs a store path defeats the point of vendoring it, and k0s prepends
@@ -65,17 +65,17 @@ instead.
 ### etcd
 
 nixpkgs keeps a package per etcd minor series, and both k0s pins land on
-one: 3.5.33 at k0s 1.33, 3.6.14 above it. `components/etcd.nix` selects
-on the pinned series rather than on the k0s minor, and asserts that the
-package it picked carries the pinned version - a nixpkgs bump has to fail
-there rather than on a vendor hash built for another version.
+one: 3.5.33 at k0s 1.33, 3.6.14 above it. `etcd.nix` selects on the
+pinned series rather than on the k0s minor, and asserts that the package
+it picked carries the pinned version - a nixpkgs bump has to fail there
+rather than on a vendor hash built for another version.
 
 Only the server is a payload binary. nixpkgs joins it with `etcdctl` and
 `etcdutl`, each a derivation of its own, and the component takes
-`deps.etcdserver`, whose `bin/` holds `etcd` alone. `payload.nix` takes
-whatever `bin/` holds, so the join reaching the payload would stage two
-binaries k0s never asks for; `checks/embedded-bins-etcd.nix` asserts it
-does not.
+`deps.etcdserver`, whose `bin/` holds `etcd` alone.
+`k0s/embedded-bins/payload.nix` takes whatever `bin/` holds, so the join
+reaching the payload would stage two binaries k0s never asks for;
+`checks/embedded-bins-etcd.nix` asserts it does not.
 
 The binary reports `Git SHA: GitNotFound`. Upstream's Dockerfile clones
 the repository and stamps the short SHA, but the source here is a tarball
@@ -98,25 +98,25 @@ k0s pins 1.8.11 below 1.36 and 1.8.13 at it. The override runs on every
 minor rather than only where the versions differ, so one path is
 exercised instead of two that drift apart as the pins move.
 
-`payload.nix` takes whatever `bin/` holds and the nixpkgs package
-installs some forty entries, so the component installs the two multi
-binaries into an output of its own. k0s stages both - it errors if either
-is missing - and makes the `iptables`, `iptables-save`,
+`k0s/embedded-bins/payload.nix` takes whatever `bin/` holds and the
+nixpkgs package installs some forty entries, so the component installs
+the two multi binaries into an output of its own. k0s stages both - it
+errors if either is missing - and makes the `iptables`, `iptables-save`,
 `iptables-restore` and `ip6tables` symlinks itself once it has detected a
 mode, so the payload carries no symlink.
 
 Where upstream's static build compiles the extensions in, these dlopen
 them out of the `lib` output at runtime. That is the sharpest case for
-`payload-closure` above: without it the extensions are what a collection
-takes first, and `checks/embedded-bins-iptables.nix` loads one to prove
-the path resolves.
+the `payload-closure` file `k0s/README.md` describes: without it the
+extensions are what a collection takes first, and
+`checks/embedded-bins-iptables.nix` loads one to prove the path resolves.
 
 ### keepalived
 
 The second C build, and the only payload binary a single node never
 stages: `cplb_linux.go` stages it when the control plane load balancer
-is configured, and nothing else asks for it. That is what splits the VM
-check's two lists apart.
+is configured, and nothing else asks for it. That is what splits
+`checks/source-build-vm.nix`'s two lists apart.
 
 nixpkgs carries 2.3.4, which is the pin at 1.34, 1.35 and 1.36; only
 1.33 differs, at 2.2.8. The override runs on every minor for the reason
@@ -153,8 +153,8 @@ them back out; what that also mangles is the default configuration path,
 which k0s never reads because it always passes `--use-file`.
 
 Like iptables, the component installs the one binary itself: keepalived
-goes to `sbin` and `bin` gets a `genhash` symlink, where `payload.nix`
-takes whatever `bin/` holds.
+goes to `sbin` and `bin` gets a `genhash` symlink, where
+`k0s/embedded-bins/payload.nix` takes whatever `bin/` holds.
 
 ### kine
 
@@ -231,9 +231,9 @@ nixpkgs' `installPhase` is replaced rather than extended, and `outputs`
 drops to `out`. It symlinks `kubectl` in, substitutes `kube-addons`,
 installs man pages and generates shell completions by *running*
 `kubeadm` - which an overridden `components` no longer builds, so the
-phase fails on a binary that is not there. `payload.nix` takes whatever
-`bin/` holds, so the symlink would have staged a binary k0s never asks
-for even if it had run.
+phase fails on a binary that is not there.
+`k0s/embedded-bins/payload.nix` takes whatever `bin/` holds, so the
+symlink would have staged a binary k0s never asks for even if it had run.
 
 **The version stamp does not transfer as an environment variable.** The
 source is a GitHub archive, so the placeholders `git archive`

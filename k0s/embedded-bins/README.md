@@ -1,5 +1,17 @@
 # embedded-bins
 
+The pins the source build is made from. Upstream builds each payload
+component in its own container image, from the versions and build
+parameters in `embedded-bins/Makefile.variables`; `extract.py` reads
+those out of the k0s source, `update.py` records them as a JSON per
+minor, and `pins.nix` is what reads them back.
+
+Two directories consume that. `components/` turns a minor's pins into a
+derivation per component, and `k0s/source.nix` builds k0s and attaches
+the result - `payload.nix` here writes the zip the 1.36 path appends.
+`k0s/README.md` describes the payload and how it is attached;
+`components/README.md` describes how each component is packaged.
+
 ## The generated files
 
 `1_33.json` through `1_36.json` are generated. Regenerate rather than
@@ -27,7 +39,7 @@ Hashes cannot be checked that way, which is why they sit apart.
 ## The vendorHash tables
 
 Two hashes cannot be prefetched, only read back from a build made to
-fail on them: k0s's in `../source.nix` and kine's in
+fail on them: k0s's in `k0s/source.nix` and kine's in
 `components/kine.nix`. `update.py` carries both, so the run that
 regenerates the JSON leaves them in step too.
 
