@@ -267,9 +267,6 @@ them out of the `lib` output at runtime. That is the sharpest case for
 takes first, and `checks/embedded-bins-iptables.nix` loads one to prove
 the path resolves.
 
-The Go toolchain is nixpkgs' rather than the `go_version` upstream pins,
-which is not yet a considered decision.
-
 ### keepalived
 
 The second C build, and the only payload binary a single node never
