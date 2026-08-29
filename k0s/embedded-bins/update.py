@@ -9,6 +9,10 @@ extract.py, and prefetches the source hashes the component derivations
 need. A source whose URL has not moved keeps the hash already recorded,
 so a run that changes nothing costs no downloads.
 
+The vendorHash tables follow, through vendor_hashes.py. They cost a
+build rather than a fetch, so they too are only touched where a pin
+moved.
+
 This is deliberately not part of k0s/update-script.bash: that one tracks
 the release binaries, and the two packages stand as alternatives while
 the source build is being built up.
@@ -21,6 +25,7 @@ import sys
 from pathlib import Path
 
 import extract
+import vendor_hashes
 
 HERE = Path(__file__).resolve().parent
 K0S_DIR = HERE.parent
@@ -121,3 +126,6 @@ def write(path: Path, data: dict) -> None:
 if __name__ == "__main__":
     for name in sys.argv[1:] or sorted(p.stem for p in K0S_DIR.glob("1_*.nix")):
         update(name)
+    # Unfiltered: a table holds every minor's hashes, so a partial run would
+    # prune the ones it was not asked about.
+    vendor_hashes.refresh(vendor_hashes.load())
