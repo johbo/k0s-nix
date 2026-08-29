@@ -8,7 +8,7 @@
     let
 
       genPackages =
-        pkgs:
+        system: pkgs:
         let
           sourceBuilds = pkgs.callPackage ./k0s/source.nix { };
 
@@ -25,11 +25,14 @@
             ;
           k0s = k0s_1_35;
         }
-        // lib.listToAttrs (
-          map (minor: lib.nameValuePair "k0s-source_${minor}" sourceBuilds.withPayload.${minor}) minors
+        // lib.optionalAttrs (buildsFromSource system) (
+          lib.listToAttrs (
+            map (minor: lib.nameValuePair "k0s-source_${minor}" sourceBuilds.withPayload.${minor}) minors
+          )
         );
 
       lib = nixpkgs.lib;
+      buildsFromSource = system: lib.elem system (import ./k0s/source-systems.nix);
       k0sSystems = [
         "armv7l-linux"
         "aarch64-linux"
@@ -50,7 +53,7 @@
         in
         # k0s itself is a linux binary; the option documentation builds
         # anywhere.
-        lib.optionalAttrs (lib.elem system k0sSystems) (genPackages pkgs)
+        lib.optionalAttrs (lib.elem system k0sSystems) (genPackages system pkgs)
         // {
           option-docs = import ./docs/options.nix {
             inherit nixpkgs pkgs;
@@ -59,7 +62,7 @@
         }
       );
 
-      overlays.default = final: prev: genPackages prev;
+      overlays.default = final: prev: genPackages prev.stdenv.hostPlatform.system prev;
 
       nixosModules.default = ./nixos/k0s.nix;
 
@@ -121,12 +124,15 @@
           };
           embedded-bins-kubernetes = import ./checks/embedded-bins-kubernetes.nix { inherit lib pkgs; };
           embedded-bins-runc = import ./checks/embedded-bins-runc.nix { inherit lib pkgs; };
-          embedded-bins-payload = import ./checks/embedded-bins-payload.nix { inherit lib pkgs; };
-          source-build = import ./checks/source-build.nix { inherit lib pkgs; };
           source-packages = import ./checks/source-packages.nix {
             inherit lib pkgs;
             packages = self.packages.${system};
           };
+        }
+        # Reading these elsewhere throws, and `nix flake show` reads every system.
+        // lib.optionalAttrs (buildsFromSource system) {
+          embedded-bins-payload = import ./checks/embedded-bins-payload.nix { inherit lib pkgs; };
+          source-build = import ./checks/source-build.nix { inherit lib pkgs; };
 
           # One VM per assembly path rather than one per minor: 1.36 appends a
           # zip behind the finished binary, and below it the offset table is

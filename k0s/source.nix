@@ -147,7 +147,7 @@ let
         homepage = "https://k0sproject.io";
         license = lib.licenses.asl20;
         mainProgram = "k0s";
-        platforms = lib.platforms.linux;
+        platforms = import ./source-systems.nix;
       };
     };
 
