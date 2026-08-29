@@ -40,8 +40,9 @@ and minor, as nixpkgs' k3s does.
 
 The one component whose binary set is a pin of its own. k0s passes
 `--build-arg CONTAINERD_BINS`, fed from a `containerd_bins` variable that
-is not one of the `_build_*` suffixes `extract.py` reads, and the set
-moves with the containerd major - four binaries at k0s 1.33, two at 1.36.
+is not one of the `_build_*` suffixes `k0s/embedded-bins/extract.py`
+reads, and the set moves with the containerd major - four binaries at
+k0s 1.33, two at 1.36.
 The component takes the `containerd`-prefixed names out of
 `payloadBinaries`, which names the same set on every packaged minor, and
 passes them as `COMMANDS`. That also suppresses the `COMMANDS +=` in
@@ -89,8 +90,9 @@ decision rather than a surprise.
 The only component with no Go pins at all. `Makefile.variables` carries a
 version and a build image and nothing else, and upstream's static linking
 - `--enable-static --disable-shared` with `LDFLAGS=-all-static` - is in
-the Dockerfile's own `configure` call, which `extract.py` never reads. So
-there is nothing for `go-ldflags.nix` to assert against here; the
+the Dockerfile's own `configure` call, which
+`k0s/embedded-bins/extract.py` never reads. So there is nothing for
+`go-ldflags.nix` to assert against here; the
 deviation is the one ADR-0016 already decided, whose reasoning does not
 turn on the component being written in Go.
 
@@ -262,7 +264,7 @@ the derivation. k8s renders `buildDate` from it, and
 `set-source-date-epoch-to-latest.sh` raises the variable to the newest
 mtime under `sourceRoot` *after* unpacking - a store path carries mtime
 1, so a value set any earlier comes out a second late. The constant is
-`source.nix`'s, so k0s and its payload agree on the date they were not
+`k0s/source.nix`'s, so k0s and its payload agree on the date they were not
 built on.
 
 **`riscv64.patch` is not applied.** Upstream's Dockerfile applies it
