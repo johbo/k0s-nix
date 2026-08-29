@@ -6,10 +6,10 @@ container image, from the versions and build parameters in
 `embedded-bins/Makefile.variables`. This directory reads those pins so a
 payload can be built from source here.
 
-Nothing in this directory is on a consumer's build path yet. It supplies
-the component derivations that are being built up, and the payload they
-are assembled into, reachable through the checks until that payload
-decides their public surface.
+What this directory supplies reaches a consumer as `k0s-source_<minor>`,
+the packages carrying a payload built here. `k0s` itself stays the
+fetched release binary, so the source build is opted into rather than
+defaulted to.
 
 ## The payload mechanism differs by minor
 
