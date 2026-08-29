@@ -11,10 +11,6 @@
         system: pkgs:
         let
           sourceBuilds = pkgs.callPackage ./k0s/source.nix { };
-
-          # Named from the pins, not from sourceBuilds: this also runs as an
-          # overlay, where forcing `prev` to name an attribute recurses.
-          minors = (import ./k0s/embedded-bins/pins.nix { inherit lib; }).minors;
         in
         rec {
           inherit (pkgs.callPackage ./k0s/default.nix { })
@@ -26,6 +22,8 @@
           k0s = k0s_1_35;
         }
         // lib.optionalAttrs (buildsFromSource system) (
+          # Keyed from the pins, not from `sourceBuilds`: this also runs as an
+          # overlay, where naming an attribute out of `prev` recurses.
           lib.listToAttrs (
             map (minor: lib.nameValuePair "k0s-source_${minor}" sourceBuilds.withPayload.${minor}) minors
           )
@@ -33,6 +31,7 @@
 
       lib = nixpkgs.lib;
       buildsFromSource = system: lib.elem system (import ./k0s/source-systems.nix);
+      minors = (import ./k0s/embedded-bins/pins.nix { inherit lib; }).minors;
       k0sSystems = [
         "armv7l-linux"
         "aarch64-linux"
@@ -130,22 +129,23 @@
           };
         }
         # Reading these elsewhere throws, and `nix flake show` reads every system.
-        // lib.optionalAttrs (buildsFromSource system) {
-          embedded-bins-payload = import ./checks/embedded-bins-payload.nix { inherit lib pkgs; };
-          source-build = import ./checks/source-build.nix { inherit lib pkgs; };
-
-          # One VM per assembly path rather than one per minor: 1.36 appends a
-          # zip behind the finished binary, and below it the offset table is
-          # compiled in. The tests/ cross product would take all four.
-          source-build-vm-1_36 = import ./checks/source-build-vm.nix {
-            inherit lib pkgs;
-            minor = "1_36";
-          };
-          source-build-vm-1_35 = import ./checks/source-build-vm.nix {
-            inherit lib pkgs;
-            minor = "1_35";
-          };
-        }
+        // lib.optionalAttrs (buildsFromSource system) (
+          {
+            embedded-bins-payload = import ./checks/embedded-bins-payload.nix { inherit lib pkgs; };
+            source-build = import ./checks/source-build.nix { inherit lib pkgs; };
+          }
+          # A VM per minor, rather than one per assembly path: cgo is on below
+          # 1.35, and each minor stages a different etcd, runc and containerd,
+          # so none stands in for another.
+          // lib.listToAttrs (
+            map (
+              minor:
+              lib.nameValuePair "source-build-vm-${minor}" (
+                import ./checks/source-build-vm.nix { inherit lib pkgs minor; }
+              )
+            ) minors
+          )
+        )
       );
 
     };

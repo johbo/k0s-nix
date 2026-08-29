@@ -67,7 +67,7 @@ defaulted to.
 What backs it: `k0s/embedded-bins/README.md` describes how each component is
 packaged, the checks read the version stamps and the payload contents back out
 of the built binary on all four minors, and `checks/source-build-vm.nix` runs a
-node on it at 1.36 and 1.35.
+node on it at each of them.
 
 The source build is offered on `x86_64-linux` and `aarch64-linux`, the systems
 every component and both assembly paths have been built on. `armv7l-linux` gets

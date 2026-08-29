@@ -140,9 +140,12 @@ staged for a SQL backend the test does not configure, and konnectivity
 is out by mode rather than by configuration - `cmd/controller` gates it
 on the node not being a single one.
 
-It runs at 1.36 and 1.35, one per assembly path, rather than at every
-minor. The zip and the offset table are what differ between them, and a
-third VM would re-prove neither.
+It runs at every minor. The assembly path was the first reason to expect
+a difference, and it is not the only one: `CGO_ENABLED` is 1 at 1.33 and
+1.34, so those are the only minors whose k0s binary is dynamically
+linked, and each minor stages a different etcd, runc and containerd.
+What the check executes is those binaries, so a minor left out is a set
+of binaries nothing has run.
 
 The node stays **NotReady**, and the check asserts that rather than
 working around it. k0s deploys its CNI, coredns and metrics-server from
