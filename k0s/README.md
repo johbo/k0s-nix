@@ -70,8 +70,8 @@ cgo compiles to a stub carrying none of the methods it calls. 1.36
 dropped rqlite altogether. This is the same trap as runc's libseccomp
 `ARG` - a build parameter living outside the file the extractor reads -
 except that this one is a per-target `make` variable rather than a
-Dockerfile `ARG`, so the guards in `k0s/embedded-bins/README.md` do not
-cover it.
+Dockerfile `ARG`, so the [guards](./embedded-bins/README.md#the-guards)
+do not cover it.
 
 ## How the payload is attached
 

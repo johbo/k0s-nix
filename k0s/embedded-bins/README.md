@@ -9,8 +9,9 @@ minor, and `pins.nix` is what reads them back.
 Two directories consume that. `components/` turns a minor's pins into a
 derivation per component, and `k0s/source.nix` builds k0s and attaches
 the result - `payload.nix` here writes the zip the 1.36 path appends.
-`k0s/README.md` describes the payload and how it is attached;
-`components/README.md` describes how each component is packaged.
+[`k0s/README.md`](../README.md) describes the payload and how it is
+attached; [`components/README.md`](./components/README.md) describes how
+each component is packaged.
 
 ## The generated files
 

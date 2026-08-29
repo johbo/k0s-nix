@@ -109,8 +109,8 @@ mode, so the payload carries no symlink.
 
 Where upstream's static build compiles the extensions in, these dlopen
 them out of the `lib` output at runtime. That is the sharpest case for
-the `payload-closure` file `k0s/README.md` describes: without it the
-extensions are what a collection takes first, and
+the [`payload-closure` file](../../README.md#how-the-payload-is-attached):
+without it the extensions are what a collection takes first, and
 `checks/embedded-bins-iptables.nix` loads one to prove the path resolves.
 
 ### keepalived
@@ -289,7 +289,7 @@ The only component whose pin is not in `Makefile.variables` at all.
 libseccomp is an `ARG LIBSECCOMP_VERSION` in runc's Dockerfile, so it
 moves independently of the version nixpkgs carries and would be dropped
 in silence by anything reading the variables file alone - which is the
-case the guards in `k0s/embedded-bins/README.md` were written for. The
+case the [guards](../README.md#the-guards) were written for. The
 component reads it as `argpin_LIBSECCOMP_VERSION` and overrides nixpkgs'
 `libseccomp` with that version and the source the pin names, so what runc
 links against is k0s's choice rather than nixpkgs'.
