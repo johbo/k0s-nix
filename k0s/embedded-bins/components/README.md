@@ -281,6 +281,35 @@ carries every stamp the build is meant to have set. `GitVersion` and
 without it the archive's own values win and report the plain version and
 `archive`.
 
+### runc
+
+The only component whose pin is not in `Makefile.variables` at all.
+libseccomp is an `ARG LIBSECCOMP_VERSION` in runc's Dockerfile, so it
+moves independently of the version nixpkgs carries and would be dropped
+in silence by anything reading the variables file alone - which is the
+case the guards in `k0s/embedded-bins/README.md` were written for. The
+component reads it as `argpin_LIBSECCOMP_VERSION` and overrides nixpkgs'
+`libseccomp` with that version and the source the pin names, so what runc
+links against is k0s's choice rather than nixpkgs'.
+
+That is also the only thing telling this build apart from the packaged
+one. `runc --version` reports the libseccomp it linked against beside its
+own version, and `checks/embedded-bins-runc.nix` reads both lines back.
+
+nixpkgs' `makeFlags` are replaced by a build phase of the component's
+own, for the reason containerd's are: nixpkgs interpolates the list
+unquoted, which would split `EXTRA_LDFLAGS` on its spaces. Passing
+`BUILDTAGS` directly also makes the pinned tags the only ones in play,
+where adding to nixpkgs' would leave its `BUILDTAGS+=seccomp` beside
+them. The check reads `runc features` and asserts
+`linux.seccomp.enabled`, so the tag having taken is established by the
+binary rather than by the flags going in.
+
+runc is the component the no-wrapper rule above binds - nixpkgs is what
+wraps it - so the install phase places the binary and its man pages
+itself. The check asserts `bin/` holds nothing but `runc`, a wrapper
+being the one thing that would leave the payload exec'ing a store path.
+
 ## Read before packaging a component
 
 - Upstream's container build is not reproducible on its own terms - it
