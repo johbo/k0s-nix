@@ -461,6 +461,17 @@ The split is what lets `checks/embedded-bins.nix` verify the first part
 offline: it re-runs `extract.py` against the pinned source and diffs.
 Hashes cannot be checked that way, which is why they sit apart.
 
+## The vendorHash tables
+
+Two hashes cannot be prefetched, only read back from a build made to
+fail on them: k0s's in `../source.nix` and kine's in
+`components/kine.nix`. `update.py` carries both, so the run that
+regenerates the JSON leaves them in step too.
+
+Each is keyed by the version its hash belongs to, so a moved pin reads
+as a missing entry and one no minor names any more is dropped. Where
+nothing is missing nothing is built.
+
 ## Separate from k0s/update-script.bash
 
 That script tracks the published release binaries. This one tracks the
