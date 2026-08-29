@@ -64,10 +64,11 @@ Kubernetes, etcd and containerd itself. That is why the fetched binary remains
 what `k0s` resolves to, and why the source build is opted into rather than
 defaulted to.
 
-What backs it: `k0s/embedded-bins/README.md` describes how each component is
-packaged, the checks read the version stamps and the payload contents back out
-of the built binary on all four minors, and `checks/source-build-vm.nix` runs a
-node on it at each of them.
+What backs it: `k0s/README.md` describes how the payload is built and attached
+and `k0s/embedded-bins/components/README.md` how each component is packaged, the
+checks read the version stamps and the payload contents back out of the built
+binary on all four minors, and `checks/source-build-vm.nix` runs a node on it at
+each of them.
 
 The source build is offered on `x86_64-linux` and `aarch64-linux`, the systems
 every component and both assembly paths have been built on. `armv7l-linux` gets
