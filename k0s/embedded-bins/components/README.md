@@ -33,8 +33,11 @@ to trust - the first while the component evaluates, the second by
 
 A third deviation carries no assertion, because the pins hold nothing it
 could be checked against: the Go toolchain is nixpkgs' rather than the
-`go_version` each minor pins. ADR-0019 decided that for every component
-and minor, as nixpkgs' k3s does.
+`go_version` each minor pins, for every component and minor, as nixpkgs'
+k3s does. Matching the pin would buy a version number rather than
+upstream's toolchain, nixpkgs' Go being patched, and it would want
+re-pinning on every k0s bump. What moves a component off nixpkgs' Go is
+a build that fails under it, rather than a rule about matching upstream.
 
 ### containerd
 
@@ -93,8 +96,8 @@ version and a build image and nothing else, and upstream's static linking
 the Dockerfile's own `configure` call, which
 `k0s/embedded-bins/extract.py` never reads. So there is nothing for
 `go-ldflags.nix` to assert against here; the
-deviation is the one ADR-0016 already decided, whose reasoning does not
-turn on the component being written in Go.
+deviation is the dynamic linking above, whose reasoning does not turn on
+the component being written in Go.
 
 k0s pins 1.8.11 below 1.36 and 1.8.13 at it. The override runs on every
 minor rather than only where the versions differ, so one path is
@@ -124,7 +127,7 @@ nixpkgs carries 2.3.4, which is the pin at 1.34, 1.35 and 1.36; only
 1.33 differs, at 2.2.8. The override runs on every minor for the reason
 iptables' does.
 
-ADR-0024 gives it k0s's feature set rather than nixpkgs'. Upstream's
+It is built with k0s's feature set rather than nixpkgs'. Upstream's
 Dockerfile installs openssl and libnl3 and nothing else, so what k0s
 ships has VRRP and LVS alone, where nixpkgs adds `file`, `libmnl`,
 `libnftnl` and net-snmp. Nothing k0s configures reaches those - its VRRP
@@ -135,7 +138,7 @@ detected feature set as two compiled-in lists, so
 binary rather than the derivation.
 
 `--disable-dynamic-linking` is passed as the pin has it, and it is not
-the static linking ADR-0016 drops. It makes keepalived link libiptc,
+the static linking the payload drops. It makes keepalived link libiptc,
 libipset and libnl at build time instead of `dlopen`ing them by soname -
 the trap iptables' extensions already cost a `payload-closure` entry to
 avoid - and with ipset absent it changes nothing.
@@ -180,10 +183,10 @@ in a clone, the tarball-has-no-git case etcd meets differently - kine has
 no fallback of its own, so nixpkgs' answer is kept and
 `checks/embedded-bins-kine.nix` reads it back out of `kine --version`.
 
-The nixpkgs package runs kine's test suite and this component does not
-(ADR-0027). The `nats` tag compiles in a suite nixpkgs never builds, and
-at 0.13.19 it fails against its own embedded server - a different set of
-tests each run. What the check reads back instead is that the tag took,
+The nixpkgs package runs kine's test suite and this component does not.
+The `nats` tag compiles in a suite nixpkgs never builds, and at 0.13.19
+it fails against its own embedded server - a different set of tests each
+run. What the check reads back instead is that the tag took,
 by the embedded server's constructor being a symbol in the binary, and
 that cgo was on, by the binary carrying an interpreter. cgo off would
 leave `go-sqlite3` a stub that builds and fails at runtime, and it is on
@@ -222,9 +225,11 @@ component's, because the payload entry has to be the name k0s stages.
 
 The last of the single node components, and the second whose binary set
 is out of band: `kubernetes_bins` is a plain variable in
-`embedded-bins/Makefile`, the same class as `containerd_bins`, so
-ADR-0020 applies and the component filters the `kube`-prefixed names out
-of `payloadBinaries` - `kubelet`, `kube-apiserver`, `kube-scheduler` and
+`embedded-bins/Makefile`, the same class as `containerd_bins`, and
+answered the same way: the set comes out of the extracted data rather
+than a second list kept here, so a minor added later carries its own.
+The component filters the `kube`-prefixed names out of
+`payloadBinaries` - `kubelet`, `kube-apiserver`, `kube-scheduler` and
 `kube-controller-manager` on every packaged minor, with `keepalived` not
 colliding. They go in as the `components` argument the nixpkgs package
 already takes, which is also what sets `WHAT`.
