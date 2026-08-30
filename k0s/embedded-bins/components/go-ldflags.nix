@@ -1,6 +1,6 @@
-# ADR-0016 drops upstream's static linking rather than reproducing it, so
-# anything else in build_go_ldflags_extra would be a pin dropped in silence.
-# etcd comments the variable out, which is why an absent field passes too.
+# Upstream's static flag is dropped rather than reproduced, for the reasons
+# README.md gives. The assert is so that anything else in the field stops the
+# build instead of going with it; etcd leaves the field out, so absent passes.
 component:
 let
   staticLinking = "-extldflags=-static";

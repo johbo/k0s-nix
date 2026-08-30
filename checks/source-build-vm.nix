@@ -90,7 +90,7 @@ pkgs.testers.runNixOSTest {
       # tests/single.nix stops at `k0s status`, where this one runs the kubelet
       # to registration. A 32-bit guest takes the most qemu will allocate
       # instead, because the assertion guarding that fires at evaluation and
-      # would take `nix flake check --all-systems` with it (ADR-0023). It reads
+      # would take `nix flake check --all-systems` with it. It reads
       # `memorySize < 2047` where its message says "above 2047", so the ceiling
       # is one lower than the message implies.
       virtualisation = {

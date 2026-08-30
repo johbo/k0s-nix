@@ -14,9 +14,9 @@ let
     src = fetchzip { inherit (sources.iptables) url hash; };
   });
 in
-# Upstream links these statically, which ADR-0016 does not reproduce; the flags
-# are in the Dockerfile's own configure call rather than in a pin, so there is
-# nothing here for a guard to assert against.
+# Upstream links these statically, which the payload does not reproduce for the
+# reasons README.md gives; the flags are in the Dockerfile's own configure call
+# rather than in a pin, so there is nothing here for a guard to assert against.
 #
 # k0s stages both multi binaries and makes the iptables and ip6tables symlinks
 # itself, so the payload carries those two out of the forty-odd entries the

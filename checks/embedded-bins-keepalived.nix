@@ -3,9 +3,9 @@ let
   pins = import ../k0s/embedded-bins/pins.nix { inherit lib; };
   components = pkgs.callPackage ../k0s/embedded-bins/components { };
 
-  # ADR-0024 gives the payload k0s's feature set rather than nixpkgs', and
-  # configure reports what it detected, so the decision is read back out of the
-  # binary instead of trusted from the derivation. LVS and VRRP are what k0s's
+  # The payload carries k0s's feature set rather than nixpkgs', and configure
+  # reports what it detected, so the decision is read back out of the binary
+  # instead of trusted from the derivation. LVS and VRRP are what k0s's
   # own configuration asks for; the refused names are what nixpkgs' file,
   # libmnl, libnftnl and net-snmp would each have turned on.
   required = [

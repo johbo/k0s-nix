@@ -10,8 +10,9 @@
   component,
   sources,
 }:
-# ADR-0016 drops upstream's static linking, and -s only strips, which
-# fixupPhase does anyway. Anything else here would be a pin dropped in silence.
+# The payload drops upstream's static linking, for the reasons README.md gives,
+# and -s only strips, which fixupPhase does anyway. Anything else here would be
+# a pin dropped in silence.
 assert component.build_cflags == "-static -s";
 assert component.build_ldflags == "-static";
 let
@@ -28,8 +29,8 @@ let
     inherit (component) version;
     src = fetchzip { inherit (sources.keepalived) url hash; };
 
-    # ADR-0024: k0s's feature set rather than nixpkgs', which is what dropping
-    # file, libmnl, libnftnl and net-snmp here amounts to.
+    # k0s's feature set rather than nixpkgs', which is what dropping file,
+    # libmnl, libnftnl and net-snmp here amounts to.
     nativeBuildInputs = [ pkg-config ];
     buildInputs = [
       libnl

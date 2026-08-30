@@ -49,7 +49,7 @@ kine.overrideAttrs (old: {
     CGO_CFLAGS = component.build_go_cgo_cflags;
   };
 
-  # ADR-0027: the nats tag compiles a suite nixpkgs never runs, and at 0.13.19
-  # it fails against its own embedded server, a different set of tests each run.
+  # The nats tag compiles a suite nixpkgs never runs, and at 0.13.19 it fails
+  # against its own embedded server, a different set of tests each run.
   doCheck = false;
 })
