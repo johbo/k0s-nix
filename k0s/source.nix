@@ -28,7 +28,7 @@ let
   };
 
   # Kept by hand and checked against the extracted value rather than read from
-  # it, so upstream changing this stops the build and is looked at (ADR-0034).
+  # it, so upstream changing this stops the build and is looked at.
   cgoEnabled = {
     "1_33" = 1;
     "1_34" = 1;
