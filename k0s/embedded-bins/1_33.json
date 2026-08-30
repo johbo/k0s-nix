@@ -142,6 +142,39 @@
       "alpine_patch_version": "3.22.5",
       "go_version": "1.25.12"
     },
+    "k0sBinary": {
+      "env": {
+        "CGO_CFLAGS": "",
+        "CGO_ENABLED": "1",
+        "GOOS": "linux"
+      },
+      "go_flags": [
+        "-tags=osusergo",
+        "-buildvcs=false",
+        "-trimpath"
+      ],
+      "ldflags": [
+        "-w",
+        "-s",
+        "-X github.com/k0sproject/k0s/pkg/build.Version=v1.33.13-dev+k0s",
+        "-X github.com/k0sproject/k0s/pkg/build.RuncVersion=1.2.8",
+        "-X github.com/k0sproject/k0s/pkg/build.ContainerdVersion=1.7.34",
+        "-X github.com/k0sproject/k0s/pkg/build.KubernetesVersion=1.33.13",
+        "-X github.com/k0sproject/k0s/pkg/build.KineVersion=0.13.19",
+        "-X github.com/k0sproject/k0s/pkg/build.EtcdVersion=3.5.33",
+        "-X github.com/k0sproject/k0s/pkg/build.KonnectivityVersion=0.32.0",
+        "-X github.com/k0sproject/k0s/pkg/build.EulaNotice=",
+        "-X github.com/k0sproject/k0s/pkg/telemetry.segmentToken=",
+        "-X k8s.io/component-base/version.gitVersion=v1.33.13",
+        "-X k8s.io/component-base/version.gitMajor=1",
+        "-X k8s.io/component-base/version.gitMinor=33",
+        "-X k8s.io/component-base/version.buildDate=1970-01-01T00:00:00Z",
+        "-X k8s.io/component-base/version.gitCommit=not_available",
+        "-X github.com/containerd/containerd/version.Version=1.7.34",
+        "-X github.com/containerd/containerd/version.Revision=",
+        "-extldflags=-static"
+      ]
+    },
     "payloadBinaries": [
       "runc",
       "kubelet",

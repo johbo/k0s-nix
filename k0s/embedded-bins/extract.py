@@ -1,11 +1,13 @@
 #!/usr/bin/env nix-shell
 #!nix-shell -i python3 -p python3 gnumake
-"""Read the k0s embedded-bins pins and build parameters as JSON.
+"""Read the k0s pins and build parameters as JSON.
 
     extract.py <k0s-source-dir>
 
-Needs no network. Keys mirror upstream's own flat variable namespace, so
-the output reads against embedded-bins/Makefile.variables directly.
+Needs no network. Two files are read: embedded-bins/Makefile.variables
+for the payload components, whose keys mirror upstream's own flat
+variable namespace, and k0s's own Makefile for the parameters the k0s
+binary itself is built with.
 
 Every set this depends on is asserted against the source. Upstream adding
 a component, a build parameter or a pin stops the run instead of
@@ -14,6 +16,7 @@ producing a quietly incomplete result.
 
 import json
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -71,6 +74,7 @@ def extract(source_dir: Path) -> dict:
         "payloadBinaries": variables["posix_bins"].split(),
         "components": {name: component(name, variables, dockerfiles[name])
                        for name in sorted(dockerfiles)},
+        "k0sBinary": k0s_binary(source_dir),
     }
 
 
@@ -111,6 +115,51 @@ def sources(name: str, dockerfile: str, version: str, pins: dict[str, str]) -> d
     extra = sorted(url for url in urls if url not in repositories)
     return {"source_url": repositories[0], "source_tag": f"v{version}",
             **({"extra_urls": extra} if extra else {})}
+
+
+# make rather than a parse: upstream sets these on the k0s target below 1.36
+# and as plain variables from 1.36 on, and only an expansion is indifferent to
+# which.
+def k0s_binary(source_dir: Path) -> dict:
+    return build_parameters(build_command(dry_run(source_dir)))
+
+
+# Without SOURCE_DATE_EPOCH the build date comes off the wall clock and one
+# source does not extract twice the same. GO drops the container wrapper.
+def dry_run(source_dir: Path) -> str:
+    return subprocess.run(
+        ["make", "--dry-run", "-C", str(source_dir),
+         "GO=go", "SOURCE_DATE_EPOCH=0", "k0s"],
+        capture_output=True, text=True, check=True).stdout
+
+
+def build_command(output: str) -> str:
+    commands = [line for line in logical_lines(output)
+                if re.search(r"\bgo build\b.*\bmain\.go$", line)]
+    if len(commands) != 1:
+        sys.exit(f"expected one k0s build command, found {len(commands)}")
+    return commands[0]
+
+
+def build_parameters(command: str) -> dict:
+    words = shlex.split(command)
+    build = words.index("build")
+    flags = words[build + 1:words.index("-o")]
+
+    linking = [flag for flag in flags if flag.startswith("-ldflags=")]
+    if len(linking) != 1:
+        sys.exit(f"expected one -ldflags, found {len(linking)}")
+
+    return {
+        "env": dict(word.split("=", 1) for word in words[:build - 1]),
+        "go_flags": [flag for flag in flags if flag not in linking],
+        "ldflags": link_flags(linking[0].removeprefix("-ldflags=")),
+    }
+
+
+def link_flags(value: str) -> list[str]:
+    words = iter(shlex.split(value))
+    return [f"{word} {next(words)}" if word == "-X" else word for word in words]
 
 
 # A fetch is regularly spread over several lines joined by a backslash.
