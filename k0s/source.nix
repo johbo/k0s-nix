@@ -27,12 +27,8 @@ let
     "1.36.3+k0s.2" = "sha256-+ZME6rqB0GU6cKCPB3KgxgHyUN5QnmcIW8UgLsER5G8=";
   };
 
-  # Upstream sets this per target and per minor, in the Makefile rather than in
-  # Makefile.variables, so extract.py does not see it. 1.33 and 1.34 need cgo
-  # because pkg/backup reaches github.com/rqlite/rqlite/db behind nothing but a
-  # `unix` build constraint, and rqlite needs the real mattn/go-sqlite3 - which
-  # without cgo compiles to a stub carrying none of the methods it calls. 1.36
-  # dropped rqlite altogether.
+  # Kept by hand and checked against the extracted value rather than read from
+  # it, so upstream changing this stops the build and is looked at (ADR-0034).
   cgoEnabled = {
     "1_33" = 1;
     "1_34" = 1;
@@ -72,6 +68,13 @@ let
 
       generateBindata = payload != null;
       staging = "embedded-bins/staging/linux";
+
+      recordedCgo = cgoEnabled.${minor} or (throw "no CGO_ENABLED recorded for ${minor}");
+      upstreamCgo = pin.upstream.k0sBinary.env.CGO_ENABLED;
+      checkedCgo = lib.throwIf (toString recordedCgo != upstreamCgo) ''
+        k0s ${pin.k0sVersion} builds with CGO_ENABLED=${upstreamCgo} upstream,
+        ${toString recordedCgo} is recorded in k0s/source.nix
+      '' recordedCgo;
     in
     buildGoModule {
       pname = "k0s";
@@ -111,7 +114,7 @@ let
           bindata_linux pkg/assets/zz_generated_offsets_linux.go
       '';
 
-      env.CGO_ENABLED = cgoEnabled.${minor} or (throw "no CGO_ENABLED recorded for ${minor}");
+      env.CGO_ENABLED = checkedCgo;
 
       tags = [ "osusergo" ] ++ lib.optional (!zipPayload && !generateBindata) "noembedbins";
 
