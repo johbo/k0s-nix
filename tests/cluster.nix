@@ -43,16 +43,29 @@ in
       inherit (nodes.wrkr1.services.k0s) tokenFile;
     in
     ''
+      import time
+
       start_all()
       ctrl.wait_for_unit("k0s")
       ctrl.wait_for_file("/run/k0s/status.sock")
       ctrl.succeed("${k0s}/bin/k0s status")
 
-      def mkJoinToken():
+      def tryCreateJoinToken():
         (exit_code, stdout) = ctrl.execute("${k0s}/bin/k0s token create --role=worker 2>&1")
         if exit_code != 0:
           raise Exception(f"failed to create join token ({exit_code}): {stdout}")
         return stdout.strip()
+
+      def mkJoinToken(retries = 2):
+        try:
+          return tryCreateJoinToken()
+        except Exception as e:
+          print(e)
+          # this is known to be flaky, wait a bit and retry
+          if retries == 0:
+            raise e
+          time.sleep(0.1)
+          return mkJoinToken(retries - 1)
 
       for node in [wrkr1, wrkr2]:
         info=node.get_unit_info("k0s")
