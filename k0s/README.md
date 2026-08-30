@@ -62,16 +62,20 @@ themselves are committed, and each generator runs through `go run
 <tool>@<version>`, which wants the network.
 
 **`CGO_ENABLED` is per minor, and it is not in `Makefile.variables`.**
-The Makefile sets it on the `k0s` target itself: 1 at 1.33 and 1.34, 0
-at 1.35 and 1.36. Below 1.35 `pkg/backup` reaches
-`github.com/rqlite/rqlite/db` behind nothing but a `unix` build
+It is 1 at 1.33 and 1.34, 0 at 1.35 and 1.36. Below 1.35 `pkg/backup`
+reaches `github.com/rqlite/rqlite/db` behind nothing but a `unix` build
 constraint, and rqlite needs the real `mattn/go-sqlite3`, which without
 cgo compiles to a stub carrying none of the methods it calls. 1.36
-dropped rqlite altogether. This is the same trap as runc's libseccomp
-`ARG` - a build parameter living outside the file the extractor reads -
-except that this one is a per-target `make` variable rather than a
-Dockerfile `ARG`, so the [guards](./embedded-bins/README.md#the-guards)
-do not cover it.
+dropped rqlite altogether.
+
+The `Makefile` moved it, too: below 1.36 it is set on the `k0s` target
+itself, from 1.36 on it is a plain variable and the recipe sits on
+`k0s.bare`. So `extract.py` asks `make` to expand the build command
+rather than parsing either shape, and `source.nix` keeps the value by
+hand and compares the two. A disagreement stops the build, so a change
+upstream makes here is looked at rather than followed - and a tree whose
+build command cannot be found is refused by the
+[guards](./embedded-bins/README.md#the-guards) like anything else.
 
 ## How the payload is attached
 

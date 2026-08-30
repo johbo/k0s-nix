@@ -6,6 +6,10 @@ parameters in `embedded-bins/Makefile.variables`; `extract.py` reads
 those out of the k0s source, `update.py` records them as a JSON per
 minor, and `pins.nix` is what reads them back.
 
+`extract.py` reaches one file beyond this directory. The k0s binary
+itself is built by k0s's own `Makefile`, so the parameters it takes are
+read from there and recorded under `k0sBinary`.
+
 Two directories consume that. `components/` turns a minor's pins into a
 derivation per component, and `k0s/source.nix` builds k0s and attaches
 the result - `payload.nix` here writes the zip the 1.36 path appends.
@@ -28,7 +32,8 @@ Each holds three things:
 - `k0sVersion`, which has to agree with `k0s/<minor>.nix`.
 - `upstream`, exactly what `extract.py` read out of the k0s source. Keys
   mirror upstream's own flat variable namespace, so an entry reads
-  against `Makefile.variables` directly.
+  against `Makefile.variables` directly. `k0sBinary` is the one that
+  does not: it holds the `go build` k0s's own `Makefile` runs, expanded.
 - `fetch`, the URLs and hashes `update.py` prefetched. A source whose URL
   has not moved keeps the hash already recorded, so a run that changes
   nothing costs no downloads.
@@ -65,8 +70,13 @@ of being silently dropped. `runc`'s Dockerfile carries
 `ARG LIBSECCOMP_VERSION`, a pin `Makefile.variables` does not mention at
 all, which is the case that motivates them.
 
+The k0s binary's own parameters are guarded by shape rather than by a
+set: upstream builds it with exactly one `go build`, and a tree where
+that command cannot be found stops the run rather than recording
+nothing.
+
 The guards are exercised by the check rather than trusted: it mutates a
-copy of the source three ways and asserts each one is refused.
+copy of the source four ways and asserts each one is refused.
 
 `update.py` carries one of its own. `pins.nix` resolves a source by name
 and takes the first match, so a name used twice hides an entry - and a
