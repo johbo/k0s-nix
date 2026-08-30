@@ -85,6 +85,10 @@ pkgs.runCommand "k0s-embedded-bins-extraction"
     echo 'ARG NEW_PIN=1' >>"$work/src/embedded-bins/runc/Dockerfile"
     refuses "a new Dockerfile ARG default"
 
+    mutate
+    sed -i '/$(GO) build $(BUILD_GO_FLAGS)/d' "$work/src/Makefile"
+    refuses "a k0s Makefile that builds the binary some other way"
+
     [ -z "$failed" ] || exit 1
     touch $out
   ''
