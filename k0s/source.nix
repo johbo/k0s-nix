@@ -114,6 +114,11 @@ let
           bindata_linux pkg/assets/zz_generated_offsets_linux.go
       '';
 
+      # preBuild is inherited by the vendor derivation, where the generator
+      # runs before `go mod vendor` writes the tree it needs - and nothing
+      # notices until a vendorHash is recomputed.
+      overrideModAttrs = _: _: { preBuild = ""; };
+
       env.CGO_ENABLED = checkedCgo;
 
       tags = [ "osusergo" ] ++ lib.optional (!zipPayload && !generateBindata) "noembedbins";
