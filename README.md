@@ -65,7 +65,6 @@ Add this flake as an input, import `nixosModules.default`, and apply
 
 The overlay is not optional: `services.k0s.package` defaults to `pkgs.k0s`,
 which Nixpkgs does not provide. It also supplies `k0s_<version>`: one for each k8s version not considered EoL (current + last 3 minor versions).
-`k0s_1_36`.
 
 `spec.api.address` has no default; `192.0.2.1` stands in for the address the
 node binds its API to.
