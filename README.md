@@ -64,7 +64,7 @@ Add this flake as an input, import `nixosModules.default`, and apply
 ```
 
 The overlay is not optional: `services.k0s.package` defaults to `pkgs.k0s`,
-which Nixpkgs does not provide. It also supplies `k0s_1_33` through
+which Nixpkgs does not provide. It also supplies `k0s_<version>`: one for each k8s version not considered EoL (current + last 3 minor versions).
 `k0s_1_36`.
 
 `spec.api.address` has no default; `192.0.2.1` stands in for the address the
@@ -110,6 +110,8 @@ Whether a node needs a join token follows from its role:
   unless it uses an external `etcd` (`spec.storage.etcd.externalCluster`).
 - `single`, and the controller carrying `services.k0s.controller.isLeader`,
   never need one.
+
+Generate a join token by running `k0s token create --role=worker` (or `--role=controller` accordingly) on the controller carrying `services.k0s.controller.isLeader`. It will be written to `stdout`.
 
 Place the token in the file `services.k0s.tokenFile` names, `/etc/k0s/k0stoken`
 by default. While a token is required and that file is absent, systemd skips
