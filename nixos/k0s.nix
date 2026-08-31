@@ -11,16 +11,41 @@ let
     mkRemovedOptionModule
     mkOption
     mkIf
+    literalMD
+    optional
     optionalString
     concatMapAttrs
     ;
   inherit (lib.types)
+    bool
     str
     enum
+    package
     path
     submodule
     ;
   cfg = config.services.k0s;
+
+  generatedConfig = (pkgs.formats.yaml { }).generate "k0s.yaml" {
+    apiVersion = "k0s.k0sproject.io/v1beta1";
+    kind = "Cluster";
+    metadata = {
+      name = cfg.clusterName;
+    };
+    inherit (cfg) spec;
+  };
+
+  validatedConfig =
+    pkgs.runCommand "k0s.yaml-validated"
+      {
+        preferLocalBuild = true;
+      }
+      ''
+        ln -s ${cfg.configFile} $out
+        ${cfg.package}/bin/k0s config validate --config $out
+      '';
+
+  canValidate = pkgs.stdenv.buildPlatform.canExecute pkgs.stdenv.hostPlatform;
 in
 {
   imports = [
@@ -49,24 +74,23 @@ in
       default = "single";
     };
 
-    controller = lib.optionalAttrs (cfg.role == "controller" || cfg.role == "controller+worker") (
-      lib.mkOption {
-        description = ''
-          Controller specific configuration
-        '';
-        type = submodule {
-          options = {
-            isLeader = lib.mkOption {
-              description = ''
-                The leader is used to generate the join tokens.
-              '';
-              default = false;
-            };
+    controller = mkOption {
+      description = ''
+        Controller specific configuration
+      '';
+      type = submodule {
+        options = {
+          isLeader = mkOption {
+            description = ''
+              The leader is used to generate the join tokens.
+            '';
+            type = bool;
+            default = false;
           };
         };
-        default = { };
-      }
-    );
+      };
+      default = { };
+    };
 
     dataDir = mkOption {
       description = ''
@@ -107,6 +131,54 @@ in
       default = "";
       type = str;
     };
+
+    configFile = mkOption {
+      description = ''
+        The generated k0s configuration, as it is placed in
+        `/etc/k0s/k0s.yaml`. Build this to read what the module makes
+        of the options set on it.
+      '';
+      type = package;
+      readOnly = true;
+      default = generatedConfig;
+      defaultText = literalMD "the configuration generated from {option}`services.k0s.spec`";
+    };
+
+    validatedConfigFile = mkOption {
+      description = ''
+        {option}`services.k0s.configFile` with `k0s config validate`
+        run over it while building. Build this attribute to get the
+        validation result on its own, without making the system build
+        depend on it.
+
+        It runs the packaged k0s binary, so it needs a builder that can
+        execute it, and it runs under Nix's sandbox. Configuration that
+        k0s checks against the host it runs on cannot be validated
+        there.
+      '';
+      type = package;
+      readOnly = true;
+      default = validatedConfig;
+      defaultText = literalMD "{option}`services.k0s.configFile`, validated";
+    };
+
+    enableConfigCheck = mkOption {
+      description = ''
+        Adds {option}`services.k0s.validatedConfigFile` to
+        {option}`system.checks`, so that an invalid configuration fails
+        the system build instead of the node. What the node deploys is
+        the same either way.
+
+        Off by default: k0s validates against the host as well as the
+        file, so a configuration that is valid on a node can fail in a
+        build. Control plane load balancing is one such case.
+
+        The check is skipped silently where the builder cannot execute
+        {option}`services.k0s.package`.
+      '';
+      type = bool;
+      default = false;
+    };
   };
 
   config =
@@ -114,17 +186,9 @@ in
       subcommand = if (cfg.role == "worker") then "worker" else "controller";
       isExternalEtcd = cfg.spec.storage.type == "etcd" && cfg.spec.storage.etcd.externalCluster != null;
       isWorker = cfg.role == "worker";
-      isLeader = (cfg.role == "single") || (cfg.controller.isLeader or false);
+      isLeader = (cfg.role == "single") || cfg.controller.isLeader;
       requireJoinToken = isWorker || (!isLeader && !isExternalEtcd);
       unitName = "k0s";
-      configFile = (pkgs.formats.yaml { }).generate "k0s.yaml" {
-        apiVersion = "k0s.k0sproject.io/v1beta1";
-        kind = "Cluster";
-        metadata = {
-          name = cfg.clusterName;
-        };
-        inherit (cfg) spec;
-      };
       forbiddenArgs = [
         "--data-dir"
         "--config"
@@ -142,7 +206,9 @@ in
         }
       ];
 
-      environment.etc."k0s/k0s.yaml".source = configFile;
+      environment.etc."k0s/k0s.yaml".source = cfg.configFile;
+
+      system.checks = optional (cfg.enableConfigCheck && canValidate) cfg.validatedConfigFile;
 
       systemd.services.${unitName} = {
         description = "k0s - Zero Friction Kubernetes";
@@ -168,7 +234,7 @@ in
           Restart = "always";
           ExecStart =
             "${cfg.package}/bin/k0s ${subcommand} --data-dir=${cfg.dataDir}"
-            + optionalString (cfg.role != "worker") " --config=${configFile}"
+            + optionalString (cfg.role != "worker") " --config=${cfg.configFile}"
             + optionalString (cfg.role == "single") " --single"
             + optionalString (cfg.role == "controller+worker") " --enable-worker --no-taints"
             + optionalString requireJoinToken " --token-file=${cfg.tokenFile}"

@@ -12,8 +12,4 @@ in
       example = literalExpression example;
       inherit description;
     });
-
-  mkOptionMandatoryIf =
-    condition: option: default:
-    mkOption (if condition then option else option // { inherit default; });
 }

@@ -1,10 +1,9 @@
 {
   lib,
-  config,
   ...
 }@args:
 let
-  inherit (lib) mkEnableOption mkOption optionalAttrs;
+  inherit (lib) mkEnableOption mkOption;
   inherit (lib.types)
     enum
     port
@@ -26,7 +25,7 @@ in
       default = "EnvoyProxy";
     };
 
-    envoyProxy = optionalAttrs (config.enabled && config.type == "EnvoyProxy") (mkOption {
+    envoyProxy = mkOption {
       description = ''
         Configuration options related to the "EnvoyProxy" type of load balancing.
       '';
@@ -58,6 +57,6 @@ in
         };
       };
       default = { };
-    });
+    };
   };
 }

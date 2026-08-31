@@ -191,6 +191,7 @@ rec {
     description = "IPv6 CIDR";
   };
   cidr = either cidrV4 cidrV6;
+  emptyOrCidrV6 = either (enum [ "" ]) cidrV6;
   ipV4WithPort = addCheck str isValidIpV4WithPort // {
     description = "IPv4 address with port";
   };
