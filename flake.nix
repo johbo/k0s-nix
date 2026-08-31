@@ -109,6 +109,12 @@
           option-types = import ./checks/types.nix { inherit lib pkgs; };
           option-docs = self.packages.${system}.option-docs;
         }
+        // lib.optionalAttrs (versions != [ ]) {
+          readme-example = import ./checks/readme.nix {
+            inherit lib nixpkgs pkgs;
+            k0sNix = self;
+          };
+        }
       );
 
     };

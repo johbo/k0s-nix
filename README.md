@@ -10,6 +10,12 @@ The implementation is in its early phase. It is possible to use and make work
 (with a few manual twists) for early inspection.
 
 
+## Module options
+
+The options of the NixOS module are documented at
+<https://nix-community.github.io/k0s-nix/>.
+
+
 ## Contributions
 
 Both contributions and forks are welcome, also if this should ever reach a state
@@ -19,13 +25,49 @@ this Flake for it.
 
 ## Usage
 
-### Build the test system configuration
+### Use the module in your own flake
 
-```sh
-nix build .#nixosConfigurations.test.config.system.build.toplevel
+Add this flake as an input, import `nixosModules.default`, and apply
+`overlays.default`:
+
+<!-- readme-example -->
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+    k0s-nix.url = "github:nix-community/k0s-nix";
+    k0s-nix.inputs.nixpkgs.follows = "nixpkgs";
+  };
+
+  outputs =
+    { nixpkgs, k0s-nix, ... }:
+    {
+      nixosConfigurations.my-node = nixpkgs.lib.nixosSystem {
+        modules = [
+          ./hardware-configuration.nix
+          k0s-nix.nixosModules.default
+          {
+            nixpkgs.overlays = [ k0s-nix.overlays.default ];
+
+            services.k0s = {
+              enable = true;
+              role = "single";
+              spec.api.address = "192.0.2.1";
+            };
+
+            system.stateVersion = "26.05";
+          }
+        ];
+      };
+    };
+}
 ```
 
-Inspect the result in `./result`.
+The overlay is not optional: `services.k0s.package` defaults to `pkgs.k0s`,
+which Nixpkgs does not provide. It also supplies `k0s_<version>`: one for each k8s version not considered EoL (current + last 3 minor versions).
+
+`spec.api.address` has no default; `192.0.2.1` stands in for the address the
+node binds its API to.
 
 
 ### Validate the generated configuration
@@ -60,14 +102,26 @@ The check is also skipped where the builder cannot execute
 
 ### Token handling to join the cluster
 
-`k0s` uses a token to join the cluster. The token has to be placed into
-`/etc/k0s/k0stoken` (configurable via `services.k0s.tokenFile`), otherwise the
-service will not start.
+Whether a node needs a join token follows from its role:
 
-After the join the content is not needed anymore and the file can be emptied.
+- `worker` always needs one.
+- `controller` and `controller+worker` need one to join an existing cluster,
+  unless it uses an external `etcd` (`spec.storage.etcd.externalCluster`).
+- `single`, and the controller carrying `services.k0s.controller.isLeader`,
+  never need one.
 
-Providing the token has to be done either manually or by your favorite
-automation tooling.
+Generate a join token by running `k0s token create --role=worker` (or `--role=controller` accordingly) on the controller carrying `services.k0s.controller.isLeader`. It will be written to `stdout`.
+
+Place the token in the file `services.k0s.tokenFile` names, `/etc/k0s/k0stoken`
+by default. While a token is required and that file is absent, systemd skips
+the unit instead of failing it: `k0s.service` stays inactive and reports no
+error.
+
+The token is only read when joining. Afterwards the file may be emptied, but it
+has to remain: the condition is checked on every start, not only the first.
+
+The module does not provision the token. Placing it on the node is the
+consumer's own step.
 
 
 ## Known limitations
