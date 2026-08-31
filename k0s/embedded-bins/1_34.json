@@ -1,10 +1,10 @@
 {
   "fetch": [
     {
-      "hash": "sha256-N+5jw/ucTVrE0DtPygI+Q/xeVbNbhBZie7yRf7X6I0s=",
+      "hash": "sha256-QOfqljsmRxk9RaAN4i3S3dhig/YE8jF4L2w6nBxIsHI=",
       "name": "k0s",
       "unpack": true,
-      "url": "https://github.com/k0sproject/k0s/archive/refs/tags/v1.34.10+k0s.0.tar.gz"
+      "url": "https://github.com/k0sproject/k0s/archive/refs/tags/v1.34.11+k0s.0.tar.gz"
     },
     {
       "hash": "sha256-Ve0pZgGiAWgZiArcqnk0oMU6PpPcoUzN52+dtxD6XxE=",
@@ -49,10 +49,10 @@
       "url": "https://github.com/kubernetes-sigs/apiserver-network-proxy/archive/refs/tags/v0.33.0.tar.gz"
     },
     {
-      "hash": "sha256-NN9BWQIK+B39FLbD4nTbV9M2fAXw7va9GLD3HgOdpuk=",
+      "hash": "sha256-66jZOm07X29jK7FHl6JnTPd5k58tWb43DfO6Sp2lago=",
       "name": "kubernetes",
       "unpack": true,
-      "url": "https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.34.10.tar.gz"
+      "url": "https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.34.11.tar.gz"
     },
     {
       "hash": "sha256-cBMYZOElWHQ4OkF2NlYJSZrlW4833WD8CRJRkkXeKJc=",
@@ -67,7 +67,7 @@
       "url": "https://github.com/seccomp/libseccomp/releases/download/v2.6.0/libseccomp-2.6.0.tar.gz"
     }
   ],
-  "k0sVersion": "1.34.10+k0s.0",
+  "k0sVersion": "1.34.11+k0s.0",
   "upstream": {
     "components": {
       "containerd": {
@@ -75,7 +75,7 @@
         "build_go_ldflags_extra": "-extldflags=-static",
         "build_go_tags": "apparmor,selinux",
         "build_shim_go_cgo_enabled": "0",
-        "buildimage": "docker.io/library/golang:1.25.12-alpine3.23",
+        "buildimage": "docker.io/library/golang:1.26.7-alpine3.23",
         "extra_urls": [
           "https://github.com/containerd/containerd/commit/0eaa09e35a3eca10094173a0b0210c90810a3674.patch"
         ],
@@ -86,7 +86,7 @@
       "etcd": {
         "build_go_cgo_enabled": "0",
         "build_go_ldflags": "-w -s",
-        "buildimage": "docker.io/library/golang:1.25.12-alpine3.23",
+        "buildimage": "docker.io/library/golang:1.26.7-alpine3.23",
         "source_tag": "v3.6.14",
         "source_url": "https://github.com/etcd-io/etcd.git",
         "version": "3.6.14"
@@ -109,7 +109,7 @@
         "build_go_ldflags": "-w -s",
         "build_go_ldflags_extra": "-extldflags=-static",
         "build_go_tags": "nats",
-        "buildimage": "docker.io/library/golang:1.25.12-alpine3.23",
+        "buildimage": "docker.io/library/golang:1.26.7-alpine3.23",
         "source_tag": "v0.14.16",
         "source_url": "https://github.com/rancher/kine.git",
         "version": "0.14.16"
@@ -119,7 +119,7 @@
         "build_go_flags": "-a",
         "build_go_ldflags": "-w -s",
         "build_go_ldflags_extra": "-extldflags=-static",
-        "buildimage": "docker.io/library/golang:1.25.12-alpine3.23",
+        "buildimage": "docker.io/library/golang:1.26.7-alpine3.23",
         "source_tag": "v0.33.0",
         "source_url": "https://github.com/kubernetes-sigs/apiserver-network-proxy.git",
         "version": "0.33.0"
@@ -128,17 +128,17 @@
         "build_go_flags": "-v",
         "build_go_ldflags_extra": "-extldflags=-static",
         "build_go_tags": "providerless",
-        "buildimage": "docker.io/library/golang:1.25.12-alpine3.23",
-        "source_tag": "v1.34.10",
+        "buildimage": "docker.io/library/golang:1.26.7-alpine3.23",
+        "source_tag": "v1.34.11",
         "source_url": "https://github.com/kubernetes/kubernetes.git",
-        "version": "1.34.10"
+        "version": "1.34.11"
       },
       "runc": {
         "argpin_LIBSECCOMP_VERSION": "2.6.0",
         "build_go_ldflags": "-w -s",
         "build_go_ldflags_extra": "-extldflags=-static",
         "build_go_tags": "seccomp",
-        "buildimage": "docker.io/library/golang:1.25.12-alpine3.23",
+        "buildimage": "docker.io/library/golang:1.26.7-alpine3.23",
         "extra_urls": [
           "https://github.com/seccomp/libseccomp/releases/download/v2.6.0/libseccomp-2.6.0.tar.gz"
         ],
@@ -149,7 +149,7 @@
     },
     "global": {
       "alpine_patch_version": "3.23.5",
-      "go_version": "1.25.12"
+      "go_version": "1.26.7"
     },
     "k0sBinary": {
       "env": {
@@ -165,16 +165,16 @@
       "ldflags": [
         "-w",
         "-s",
-        "-X github.com/k0sproject/k0s/pkg/build.Version=v1.34.10-dev+k0s",
+        "-X github.com/k0sproject/k0s/pkg/build.Version=v1.34.11-dev+k0s",
         "-X github.com/k0sproject/k0s/pkg/build.RuncVersion=1.3.6",
         "-X github.com/k0sproject/k0s/pkg/build.ContainerdVersion=1.7.34",
-        "-X github.com/k0sproject/k0s/pkg/build.KubernetesVersion=1.34.10",
+        "-X github.com/k0sproject/k0s/pkg/build.KubernetesVersion=1.34.11",
         "-X github.com/k0sproject/k0s/pkg/build.KineVersion=0.14.16",
         "-X github.com/k0sproject/k0s/pkg/build.EtcdVersion=3.6.14",
         "-X github.com/k0sproject/k0s/pkg/build.KonnectivityVersion=0.33.0",
         "-X github.com/k0sproject/k0s/pkg/build.EulaNotice=",
         "-X github.com/k0sproject/k0s/pkg/telemetry.segmentToken=",
-        "-X k8s.io/component-base/version.gitVersion=v1.34.10",
+        "-X k8s.io/component-base/version.gitVersion=v1.34.11",
         "-X k8s.io/component-base/version.gitMajor=1",
         "-X k8s.io/component-base/version.gitMinor=34",
         "-X k8s.io/component-base/version.buildDate=1970-01-01T00:00:00Z",

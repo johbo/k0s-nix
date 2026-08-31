@@ -22,7 +22,7 @@ let
   # derivation it makes fail.
   vendorHashes = {
     "1.33.13+k0s.1" = "sha256-t31v/A4EsaPph1QOd/0h3qTfL5poItP6k2ULLqCMEms=";
-    "1.34.10+k0s.0" = "sha256-QdPO/qYxNSPEkJnB6VPmsmDPHSEd2Hql/ZdgMR1IzRo=";
+    "1.34.11+k0s.0" = "sha256-ChF7+6tH43TuFSSm/Y8gUei8Ha28BlzSl1pl5ITziKE=";
     "1.35.7+k0s.0" = "sha256-AfAtrHoMdAbVoloNvj/785uy8Pa1PrlOCfEh2iEA8u4=";
     "1.36.3+k0s.2" = "sha256-+ZME6rqB0GU6cKCPB3KgxgHyUN5QnmcIW8UgLsER5G8=";
   };
